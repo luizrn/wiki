@@ -55,7 +55,7 @@ module.exports = {
         return {
           ...resp,
           results: _.filter(resp.results, r => {
-            if (_.startsWith(r.id, 'tbdc-')) {
+            if (_.startsWith(r.id, 'tbdc-') || _.startsWith(r.id, 'update-')) {
               return true
             }
             return WIKI.auth.checkAccess(context.req.user, ['read:pages'], {

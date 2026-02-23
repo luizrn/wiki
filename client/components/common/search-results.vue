@@ -3,7 +3,8 @@
     .search-results-container
       .text-xs-left.white--text.mb-3(v-if='search && search.length > 1')
         v-checkbox.d-inline-flex.mr-4(v-model='filterPermissions', label='Permissões', dark, hide-details, color='orange')
-        v-checkbox.d-inline-flex(v-model='filterPages', label='Processos e serviços', dark, hide-details, color='blue')
+        v-checkbox.d-inline-flex.mr-4(v-model='filterPages', label='Processos e serviços', dark, hide-details, color='blue')
+        v-checkbox.d-inline-flex(v-model='filterUpdates', label='Novidades', dark, hide-details, color='green')
       .search-results-help(v-if='!search || (search && search.length < 2)')
         img(src='/_assets/svg/icon-search-alt.svg')
         .mt-4 {{$t('common:header.searchHint')}}
@@ -79,7 +80,8 @@ export default {
         totalHits: 0
       },
       filterPermissions: true,
-      filterPages: true
+      filterPages: true,
+      filterUpdates: true
     }
   },
   computed: {
@@ -141,14 +143,14 @@ export default {
       this.search = term
     },
     goToPage(item) {
-      if (_.startsWith(item.id, 'tbdc-') || _.startsWith(item.path, 'a/')) {
+      if (_.startsWith(item.id, 'tbdc-') || _.startsWith(item.id, 'update-') || _.startsWith(item.path, 'a/')) {
         window.location.assign(`/${item.path}`)
       } else {
         window.location.assign(`/${item.locale}/${item.path}`)
       }
     },
     goToPageInNewTab(item) {
-      if (_.startsWith(item.id, 'tbdc-') || _.startsWith(item.path, 'a/')) {
+      if (_.startsWith(item.id, 'tbdc-') || _.startsWith(item.id, 'update-') || _.startsWith(item.path, 'a/')) {
         window.open(`/${item.path}`, '_blank')
       } else {
         window.open(`/${item.locale}/${item.path}`, '_blank')
@@ -162,7 +164,8 @@ export default {
         return {
           query: this.search,
           filterPermissions: this.filterPermissions,
-          filterPages: this.filterPages
+          filterPages: this.filterPages,
+          filterUpdates: this.filterUpdates
         }
       },
       fetchPolicy: 'network-only',

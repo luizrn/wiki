@@ -32,6 +32,7 @@ type PageQuery {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
+    filterUpdates: Boolean
   ): PageSearchResponse! @auth(requires: ["manage:system", "read:pages"])
 
   list(
@@ -42,6 +43,7 @@ type PageQuery {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
+    filterUpdates: Boolean
     creatorId: Int
     authorId: Int
   ): [PageListItem!]! @auth(requires: ["manage:system", "read:pages"])
@@ -54,7 +56,8 @@ type PageQuery {
     path: String!
     locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   ): Page @auth(requires: ["read:pages", "manage:system"])
 
   tags: [PageTag]! @auth(requires: ["manage:system", "read:pages"])
@@ -69,14 +72,16 @@ type PageQuery {
     mode: PageTreeMode!
     locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
     includeAncestors: Boolean
   ): [PageTreeItem] @auth(requires: ["manage:system", "read:pages"])
 
   links(
     locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   ): [PageLinkItem] @auth(requires: ["manage:system", "read:pages"])
 
   checkConflicts(
@@ -102,7 +107,8 @@ type PageMutation {
     isPrivate: Boolean!
     locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
     path: String!
     publishEndDate: Date
     publishStartDate: Date
@@ -122,6 +128,7 @@ type PageMutation {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
+    filterUpdates: Boolean
     path: String
     publishEndDate: Date
     publishStartDate: Date
@@ -141,7 +148,8 @@ type PageMutation {
     destinationPath: String!
     destinationlocale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   ): DefaultResponse @auth(requires: ["manage:pages", "manage:system"])
 
   delete(
@@ -163,10 +171,12 @@ type PageMutation {
   migrateToLocale(
     sourcelocale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
     targetlocale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   ): PageMigrationResponse @auth(requires: ["manage:system"])
 
   rebuildTree: DefaultResponse @auth(requires: ["manage:system"])
@@ -220,7 +230,8 @@ type Page {
   editor: String! @auth(requires: ["write:pages", "manage:system"])
   locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   scriptCss: String
   scriptJs: String
   authorId: Int! @auth(requires: ["write:pages", "manage:system"])
@@ -263,7 +274,8 @@ type PageVersion {
   isPublished: Boolean!
   locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   pageId: Int!
   path: String!
   publishEndDate: Date!
@@ -291,7 +303,8 @@ type PageSearchResult {
   path: String!
   locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
 }
 
 type PageListItem {
@@ -299,7 +312,8 @@ type PageListItem {
   path: String!
   locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   title: String
   description: String
   contentType: String!
@@ -323,7 +337,8 @@ type PageTreeItem {
   pageId: Int
   locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
 }
 
 type PageLinkItem {
@@ -343,7 +358,8 @@ type PageConflictLatest {
   isPublished: Boolean!
   locale: String
     filterPermissions: Boolean
-    filterPages: Boolean!
+    filterPages: Boolean
+    filterUpdates: Boolean!
   path: String!
   tags: [String]
   title: String!

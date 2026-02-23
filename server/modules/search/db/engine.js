@@ -147,6 +147,30 @@ module.exports = {
       results = _.concat(results, tbdcResults)
     }
 
+    // -> Search TBDC Updates
+    if (opts.filterUpdates === true) {
+      const updateResults = await WIKI.models.knex('tbdc_updates')
+        .join('tbdc_update_categories', 'tbdc_updates.categoryId', 'tbdc_update_categories.id')
+        .select(
+          WIKI.models.knex.raw("'update-' || tbdc_updates.id as id"),
+          WIKI.models.knex.raw("tbdc_updates.title as title"),
+          WIKI.models.knex.raw("tbdc_update_categories.name || ': ' || substr(tbdc_updates.content, 1, 100) as description"),
+          WIKI.models.knex.raw("'novidades' as path"),
+          WIKI.models.knex.raw("'pt' as locale")
+        )
+        .where(builder => {
+          builder.where('tbdc_updates.isPublished', true)
+          builder.andWhere(builderSub => {
+            builderSub.where('tbdc_updates.title', 'LIKE', queryLike)
+              .orWhere('tbdc_updates.content', 'LIKE', queryLike)
+              .orWhere('tbdc_updates.summary', 'LIKE', queryLike)
+          })
+        })
+        .limit(maxHits)
+
+      results = _.concat(results, updateResults)
+    }
+
     if (results.length > 0) {
       const pageIds = results.filter(r => !_.startsWith(r.id, 'tbdc-')).map(r => r.id)
       if (pageIds.length > 0) {

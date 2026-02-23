@@ -1,0 +1,141 @@
+# ===============================================
+# TBDC UPDATES (NOVIDADES)
+# ===============================================
+
+extend type Query {
+  tbdcUpdates: TBDCUpdateQuery
+}
+
+extend type Mutation {
+  tbdcUpdates: TBDCUpdateMutation
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+type TBDCUpdateQuery {
+  listUpdates(
+    categoryId: Int
+    limit: Int
+    offset: Int
+  ): TBDCUpdateListResponse @auth(requires: ["read:pages"])
+
+  getUpdate(id: Int!): TBDCUpdate @auth(requires: ["read:pages"])
+
+  adminConfig: TBDCUpdateAdminConfig @auth(requires: ["manage:system"])
+
+  dashboardStats: TBDCUpdateStats @auth(requires: ["manage:system"])
+
+  categories: [TBDCUpdateCategory] @auth(requires: ["read:pages"])
+
+  targets: [TBDCUpdateTarget] @auth(requires: ["read:pages"])
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+type TBDCUpdateMutation {
+  upsertUpdate(
+    id: Int
+    title: String!
+    content: String!
+    summary: String
+    categoryId: Int!
+    moduleId: Int
+    targetId: Int
+    isPublished: Boolean
+  ): TBDCUpdateResponse @auth(requires: ["manage:system"])
+
+  deleteUpdate(id: Int!): DefaultResponse @auth(requires: ["manage:system"])
+
+  saveConfig(
+    responsibleUserId: Int
+    sidebarLinks: String
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  submitVote(
+    updateId: Int!
+    rating: Int!
+    comment: String
+  ): DefaultResponse @auth(requires: ["read:pages"])
+}
+
+# -----------------------------------------------
+# TYPES
+# -----------------------------------------------
+
+type TBDCUpdate {
+  id: Int!
+  title: String!
+  content: String!
+  summary: String
+  authorId: Int
+  authorName: String
+  categoryId: Int!
+  category: TBDCUpdateCategory
+  moduleId: Int
+  targetId: Int
+  target: TBDCUpdateTarget
+  isPublished: Boolean
+  publishedAt: Date
+  createdAt: Date
+  updatedAt: Date
+  ratings: TBDCUpdateRatings
+}
+
+type TBDCUpdateCategory {
+  id: Int!
+  name: String!
+  color: String
+  icon: String
+  showOnPublicPage: Boolean
+  order: Int
+}
+
+type TBDCUpdateTarget {
+  id: Int!
+  name: String!
+  icon: String
+}
+
+type TBDCUpdateRatings {
+  happy: Int
+  neutral: Int
+  sad: Int
+  total: Int
+}
+
+type TBDCUpdateAdminConfig {
+  responsibleUserId: Int
+  sidebarLinks: String
+}
+
+type TBDCUpdateStats {
+  totalViews: Int
+  totalVotes: Int
+  averageRating: Float
+  recentVotes: [TBDCUpdateVote]
+}
+
+type TBDCUpdateVote {
+  id: Int!
+  updateId: Int!
+  updateTitle: String
+  userId: Int
+  userName: String
+  rating: Int
+  comment: String
+  createdAt: Date
+}
+
+type TBDCUpdateListResponse {
+  items: [TBDCUpdate]
+  total: Int
+}
+
+type TBDCUpdateResponse {
+  responseResult: DefaultResponse!
+  update: TBDCUpdate
+}

@@ -1,0 +1,162 @@
+# ===============================================
+# DASHBOARD + SERVICE CATALOG
+# ===============================================
+
+extend type Query {
+  dashboard: DashboardQuery
+  serviceCatalog: ServiceCatalogQuery
+}
+
+extend type Mutation {
+  dashboard: DashboardMutation
+  serviceCatalog: ServiceCatalogMutation
+}
+
+type DashboardQuery {
+  overview: DashboardOverview @auth(requires: ["read:pages", "manage:system"])
+  config: DashboardConfig @auth(requires: ["read:pages", "manage:system"])
+}
+
+type DashboardMutation {
+  saveConfig(
+    customContent: String!
+    quickLinks: [DashboardQuickLinkInput]!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+}
+
+type ServiceCatalogQuery {
+  list(
+    search: String
+    entryType: String
+    department: String
+    team: String
+    tag: String
+    limit: Int
+    offset: Int
+  ): [ServiceCatalogItem] @auth(requires: ["read:pages", "manage:system"])
+
+  facets: ServiceCatalogFacets @auth(requires: ["read:pages", "manage:system"])
+}
+
+type ServiceCatalogMutation {
+  create(
+    name: String!
+    entryType: String!
+    description: String!
+    linkUrl: String
+    department: String!
+    team: String!
+    tags: [String]
+  ): ServiceCatalogResponse @auth(requires: ["write:pages", "manage:system"])
+
+  update(
+    id: Int!
+    name: String!
+    entryType: String!
+    description: String!
+    linkUrl: String
+    department: String!
+    team: String!
+    tags: [String]
+  ): ServiceCatalogResponse @auth(requires: ["write:pages", "manage:system"])
+
+  delete(
+    id: Int!
+  ): DefaultResponse @auth(requires: ["write:pages", "manage:system"])
+}
+
+type DashboardOverview {
+  summary: DashboardSummary!
+  latestArticles: [DashboardArticleStat]!
+  topArticles: [DashboardArticleStat]!
+  topUsers: [DashboardUserStat]!
+  localeStats: [DashboardLocaleStat]!
+  visitsLast30d: [DashboardTrendPoint]!
+  createdLast30d: [DashboardTrendPoint]!
+  updatedLast30d: [DashboardTrendPoint]!
+}
+
+type DashboardSummary {
+  totalArticles: Int!
+  publishedArticles: Int!
+  draftArticles: Int!
+  totalUsers: Int!
+  totalServices: Int!
+  totalProcesses: Int!
+  totalVisits: Int!
+}
+
+type DashboardArticleStat {
+  id: Int!
+  title: String!
+  path: String!
+  locale: String!
+  createdAt: Date!
+  updatedAt: Date!
+  views: Int!
+}
+
+type DashboardUserStat {
+  id: Int!
+  name: String!
+  email: String!
+  visits: Int!
+}
+
+type DashboardLocaleStat {
+  locale: String!
+  total: Int!
+}
+
+type DashboardTrendPoint {
+  label: String!
+  value: Int!
+}
+
+type DashboardConfig {
+  customContent: String!
+  quickLinks: [DashboardQuickLink]!
+}
+
+type DashboardQuickLink {
+  label: String!
+  icon: String!
+  url: String!
+  color: String!
+}
+
+input DashboardQuickLinkInput {
+  label: String!
+  icon: String!
+  url: String!
+  color: String!
+}
+
+type ServiceCatalogItem {
+  id: Int!
+  name: String!
+  entryType: String!
+  description: String!
+  linkUrl: String
+  department: String!
+  team: String!
+  tags: [String]!
+  createdAt: Date!
+  updatedAt: Date!
+  createdById: Int!
+  updatedById: Int
+  createdByName: String
+  updatedByName: String
+  canDelete: Boolean!
+}
+
+type ServiceCatalogResponse {
+  responseResult: ResponseStatus!
+  item: ServiceCatalogItem
+}
+
+type ServiceCatalogFacets {
+  departments: [String]!
+  teams: [String]!
+  tags: [String]!
+}

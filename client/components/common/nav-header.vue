@@ -165,6 +165,40 @@
                   v-list-item-title.body-2 {{$t('common:header.delete')}}
             v-divider(vertical)
 
+          template(v-if='canExportArticle')
+            v-menu(offset-y, bottom, transition='slide-y-transition', left)
+              template(v-slot:activator='{ on: menu, attrs }')
+                v-tooltip(bottom)
+                  template(v-slot:activator='{ on: tooltip }')
+                    v-btn(
+                      icon
+                      v-bind='attrs'
+                      v-on='{ ...menu, ...tooltip }'
+                      tile
+                      height='64'
+                      aria-label='Exportar artigo'
+                      )
+                      v-icon(color='grey') mdi-export-variant
+                  span Exportar
+              v-list(nav, :light='!$vuetify.theme.dark', :dark='$vuetify.theme.dark', :class='$vuetify.theme.dark ? `grey darken-4` : ``')
+                .overline.pa-4.grey--text Exportar Artigo
+                v-list-item.pl-4(@click='exportArticle(`pdf`)')
+                  v-list-item-avatar(size='24', tile): v-icon(color='red darken-2') mdi-file-pdf-box
+                  v-list-item-title.body-2 PDF
+                v-list-item.pl-4(@click='exportArticle(`csv`)')
+                  v-list-item-avatar(size='24', tile): v-icon(color='green darken-2') mdi-file-delimited
+                  v-list-item-title.body-2 CSV
+                v-list-item.pl-4(@click='exportArticle(`xlsx`)')
+                  v-list-item-avatar(size='24', tile): v-icon(color='green darken-3') mdi-file-excel
+                  v-list-item-title.body-2 XLSX
+                v-list-item.pl-4(@click='exportArticle(`docx`)')
+                  v-list-item-avatar(size='24', tile): v-icon(color='blue darken-2') mdi-file-word
+                  v-list-item-title.body-2 DOCX
+                v-list-item.pl-4(@click='exportArticle(`pptx`)')
+                  v-list-item-avatar(size='24', tile): v-icon(color='orange darken-2') mdi-file-powerpoint
+                  v-list-item-title.body-2 PPTX
+            v-divider(vertical)
+
           //- NEW PAGE
 
           template(v-if='hasNewPagePermission && path && mode !== `edit`')
@@ -195,6 +229,19 @@
               v-btn(icon, tile, height='64', v-on='on', href='/a/tbdc-companies', aria-label='Permissões TBDC')
                 v-icon(color='grey') mdi-shield-account
             span Permissões TBDC
+
+          v-tooltip(bottom)
+            template(v-slot:activator='{ on }')
+              v-btn(icon, tile, height='64', v-on='on', href='/novidades', aria-label='Novidades')
+                v-badge(dot, overlap, color='red', :value='hasUnreadUpdates', class='pulse-badge')
+                  v-icon(color='grey') mdi-update
+            span Novidades
+
+          v-tooltip(bottom, v-if='isAuthenticated')
+            template(v-slot:activator='{ on }')
+              v-btn(icon, tile, height='64', v-on='on', href='/dashboard', :aria-label='`Dashboard`')
+                v-icon(color='grey') mdi-view-dashboard-outline
+            span Dashboard
 
           v-tooltip(bottom, v-if='isAuthenticated')
             template(v-slot:activator='{ on }')
@@ -325,6 +372,43 @@ export default {
       default: false
     }
   },
+  watch: {
+    isAuthenticated(val) {
+      if (val) {
+        this.checkUnreadUpdates()
+      }
+    }
+  },
+  mounted () {
+    if (this.isAuthenticated) {
+      this.checkUnreadUpdates()
+    }
+    this.$root.$on('tbdcUpdatesRead', () => {
+      this.hasUnreadUpdates = false
+    })
+    this.$root.$on('pageEdit', () => {
+      this.pageEdit()
+    })
+    this.$root.$on('pageHistory', () => {
+      this.pageHistory()
+    })
+    this.$root.$on('pageSource', () => {
+      this.pageSource()
+    })
+    this.$root.$on('pageMove', () => {
+      this.pageMove()
+    })
+    this.$root.$on('pageConvert', () => {
+      this.pageConvert()
+    })
+    this.$root.$on('pageDuplicate', () => {
+      this.pageDuplicate()
+    })
+    this.$root.$on('pageDelete', () => {
+      this.pageDelete()
+    })
+    this.isDevMode = siteConfig.devMode === true
+  },
   data() {
     return {
       menuIsShown: true,
@@ -343,7 +427,9 @@ export default {
       },
       notificationsMenu: false,
       unreadCount: 0,
-      notifications: []
+      notifications: [],
+      isProfileOpen: false,
+      hasUnreadUpdates: false
     }
   },
   computed: {
@@ -388,6 +474,7 @@ export default {
       return this.hasAdminPermission || _.intersection(this.permissions, ['write:pages']).length > 0
     },
     hasAdminPermission: get('page/effectivePermissions@system.manage'),
+    hasReadPagesPermission: get('page/effectivePermissions@pages.read'),
     hasWritePagesPermission: get('page/effectivePermissions@pages.write'),
     hasManagePagesPermission: get('page/effectivePermissions@pages.manage'),
     hasDeletePagesPermission: get('page/effectivePermissions@pages.delete'),
@@ -397,36 +484,15 @@ export default {
       return this.hasAdminPermission || this.hasWritePagesPermission || this.hasManagePagesPermission ||
         this.hasDeletePagesPermission || this.hasReadSourcePermission || this.hasReadHistoryPermission
     },
+    canExportArticle () {
+      return !!this.path && this.mode !== 'edit' && ['view', 'history', 'source'].includes(this.mode) && this.hasReadPagesPermission
+    },
     headerColor: get('site/headerColor')
   },
   created () {
     if (this.hideSearch || this.dense || this.$vuetify.breakpoint.smAndDown) {
       this.searchIsShown = false
     }
-  },
-  mounted () {
-    this.$root.$on('pageEdit', () => {
-      this.pageEdit()
-    })
-    this.$root.$on('pageHistory', () => {
-      this.pageHistory()
-    })
-    this.$root.$on('pageSource', () => {
-      this.pageSource()
-    })
-    this.$root.$on('pageMove', () => {
-      this.pageMove()
-    })
-    this.$root.$on('pageConvert', () => {
-      this.pageConvert()
-    })
-    this.$root.$on('pageDuplicate', () => {
-      this.pageDuplicate()
-    })
-    this.$root.$on('pageDelete', () => {
-      this.pageDelete()
-    })
-    this.isDevMode = siteConfig.devMode === true
   },
   methods: {
     searchFocus () {
@@ -512,6 +578,13 @@ export default {
     pageDelete () {
       this.deletePageModal = true
     },
+    exportArticle (format) {
+      if (!this.path || !this.locale) {
+        return
+      }
+      const encPath = this.path.split('/').map(p => encodeURIComponent(p)).join('/')
+      window.location.assign(`/x/${format}/${encodeURIComponent(this.locale)}/${encPath}`)
+    },
     assets () {
       // window.location.assign(`/f`)
       this.$store.commit('showNotification', {
@@ -519,6 +592,16 @@ export default {
         message: `Coming soon...`,
         icon: 'ferry'
       })
+    },
+    async toggleLocale() {
+      await this.$store.dispatch('localization/toggleLocale')
+    },
+    checkUnreadUpdates() {
+      const lastRead = localStorage.getItem('tbdc_updates_last_read')
+      // Simulação: se não houver lastRead ou for muito antigo, mostra o ponto
+      if (!lastRead) {
+        this.hasUnreadUpdates = true
+      }
     },
     async changeLocale (locale) {
       await this.$i18n.i18next.changeLanguage(locale.code)

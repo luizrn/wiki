@@ -5,6 +5,7 @@ const _ = require('lodash')
 const CleanCSS = require('clean-css')
 const moment = require('moment')
 const qs = require('querystring')
+const articleExport = require('../helpers/article-export')
 
 /* global WIKI */
 
@@ -338,6 +339,25 @@ router.get(['/boards', '/boards/*'], (req, res, next) => {
 })
 
 /**
+ * Dashboard
+ */
+router.get(['/dashboard', '/dashboard/*'], (req, res, next) => {
+  if (!req.user || req.user.id < 1 || req.user.id === 2) {
+    return res.status(403).render('unauthorized', { action: 'view' })
+  }
+  _.set(res.locals, 'pageMeta.title', 'Dashboard')
+  res.render('dashboard')
+})
+
+/**
+ * Updates (Novidades)
+ */
+router.get(['/novidades', '/novidades/*'], (req, res, next) => {
+  _.set(res.locals, 'pageMeta.title', 'Novidades')
+  res.render('tbdc-updates-public')
+})
+
+/**
  * Source
  */
 router.get(['/s', '/s/*'], async (req, res, next) => {
@@ -404,6 +424,62 @@ router.get(['/s', '/s/*'], async (req, res, next) => {
 router.get(['/t', '/t/*'], (req, res, next) => {
   _.set(res.locals, 'pageMeta.title', 'Tags')
   res.render('tags')
+})
+
+/**
+ * Export article on demand (no file storage)
+ */
+router.get('/x/:format/:locale/*', async (req, res, next) => {
+  try {
+    const format = _.toLower(req.params.format || '')
+    const locale = _.trim(req.params.locale || '')
+    const pagePath = _.trim(_.get(req.params, '0', '') || '')
+    if (!format || !locale || !pagePath) {
+      return res.status(400).json({ ok: false, message: 'Invalid export path.' })
+    }
+
+    const page = await WIKI.models.pages.getPageFromDb({
+      path: pagePath,
+      locale,
+      userId: req.user.id,
+      isPrivate: false
+    })
+    if (!page) {
+      _.set(res.locals, 'pageMeta.title', 'Page Not Found')
+      return res.status(404).render('notfound', { action: 'view' })
+    }
+
+    const pageArgs = {
+      path: page.path,
+      locale: page.localeCode,
+      tags: _.get(page, 'tags', [])
+    }
+    const effectivePermissions = WIKI.auth.getEffectivePermissions(req, pageArgs)
+    if (!effectivePermissions.pages.read) {
+      _.set(res.locals, 'pageMeta.title', 'Unauthorized')
+      return res.status(403).render('unauthorized', { action: 'view' })
+    }
+
+    let pageIsPublished = page.isPublished
+    if (pageIsPublished && !_.isEmpty(page.publishStartDate)) {
+      pageIsPublished = moment(page.publishStartDate).isSameOrBefore()
+    }
+    if (pageIsPublished && !_.isEmpty(page.publishEndDate)) {
+      pageIsPublished = moment(page.publishEndDate).isSameOrAfter()
+    }
+    if (!pageIsPublished && !effectivePermissions.pages.write) {
+      _.set(res.locals, 'pageMeta.title', 'Unauthorized')
+      return res.status(403).render('unauthorized', { action: 'view' })
+    }
+
+    const file = await articleExport.generate(format, page)
+    res.setHeader('Content-Type', file.mime)
+    res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`)
+    res.setHeader('Cache-Control', 'no-store')
+    res.send(file.buffer)
+  } catch (err) {
+    next(err)
+  }
 })
 
 /**
@@ -639,6 +715,15 @@ router.get('/*', async (req, res, next) => {
           let pageFilename = WIKI.config.lang.namespacing ? `${pageArgs.locale}/${page.path}` : page.path
           pageFilename += page.contentType === 'markdown' ? '.md' : '.html'
 
+          // -> Track page visit for dashboard metrics
+          WIKI.models.pageVisits.query().insert({
+            pageId: page.id,
+            userId: (req.user && req.user.id > 2) ? req.user.id : null,
+            localeCode: page.localeCode,
+            path: page.path,
+            createdAt: new Date().toISOString()
+          }).catch(() => {})
+
           // -> Render view
           res.render('page', {
             page,
@@ -650,8 +735,13 @@ router.get('/*', async (req, res, next) => {
           })
         }
       } else if (pageArgs.path === 'home') {
-        _.set(res.locals, 'pageMeta.title', 'Welcome')
-        res.render('welcome', { locale: pageArgs.locale })
+        if (req.user && req.user.id > 2) {
+          _.set(res.locals, 'pageMeta.title', 'Dashboard')
+          res.render('dashboard')
+        } else {
+          _.set(res.locals, 'pageMeta.title', 'Welcome')
+          res.render('welcome', { locale: pageArgs.locale })
+        }
       } else {
         _.set(res.locals, 'pageMeta.title', 'Page Not Found')
         if (effectivePermissions.pages.write) {

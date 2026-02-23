@@ -107,6 +107,9 @@
             v-list-item(to='/tbdc-companies', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-shield-account
               v-list-item-title Permissões TBDC
+            v-list-item(to='/tbdc-updates', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-update
+              v-list-item-title Novidades
             v-list-group(
               to='/dev'
               no-action
@@ -189,8 +192,9 @@ const router = new VueRouter({
     { path: '/public-links', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-public-links.vue') },
     { path: '/tbdc-companies', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies.vue') },
     { path: '/tbdc-companies/new', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
-    { path: '/tbdc-companies/:id(\\d+)', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
-    { path: '/tbdc-master', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-master.vue') },
+    { path: '/tbdc-companies/:id?', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
+    { path: '/tbdc-updates', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-updates.vue') },
+    { path: '/dev', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-dev-flags.vue') },
     { path: '/dev-flags', component: () => import(/* webpackChunkName: "admin-dev" */ './admin/admin-dev-flags.vue') },
     { path: '/contribute', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-contribute.vue') }
   ]

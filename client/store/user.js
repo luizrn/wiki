@@ -12,6 +12,7 @@ const state = {
   timezone: '',
   dateFormat: '',
   appearance: '',
+  chatEnabled: true,
   permissions: [],
   iat: 0,
   exp: 0,
@@ -36,6 +37,7 @@ export default {
           st.timezone = jwtData.tz || Intl.DateTimeFormat().resolvedOptions().timeZone || ''
           st.dateFormat = jwtData.df || ''
           st.appearance = jwtData.ap || ''
+          st.chatEnabled = jwtData.ce !== false
           // st.defaultEditor = jwtData.defaultEditor
           st.permissions = jwtData.permissions
           st.iat = jwtData.iat

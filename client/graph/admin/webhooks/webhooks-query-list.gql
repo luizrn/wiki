@@ -1,0 +1,16 @@
+query {
+  webhooks {
+    list {
+      id
+      title
+      description
+      logo
+      url
+      events
+      isEnabled
+      secret
+      createdAt
+      updatedAt
+    }
+  }
+}

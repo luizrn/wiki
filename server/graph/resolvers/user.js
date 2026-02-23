@@ -197,7 +197,8 @@ module.exports = {
           location: _.trim(args.location),
           timezone: args.timezone,
           dateFormat: args.dateFormat,
-          appearance: args.appearance
+          appearance: args.appearance,
+          chatEnabled: args.chatEnabled
         })
 
         const newToken = await WIKI.models.users.refreshToken(usr.id)

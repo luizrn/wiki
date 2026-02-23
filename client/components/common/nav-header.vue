@@ -1,5 +1,5 @@
 <template lang='pug'>
-  v-app-bar.nav-header(color='black', dark, app, :clipped-left='!$vuetify.rtl', :clipped-right='$vuetify.rtl', fixed, flat, :extended='searchIsShown && $vuetify.breakpoint.smAndDown')
+  v-app-bar.nav-header(:color='headerColor', dark, app, :clipped-left='!$vuetify.rtl', :clipped-right='$vuetify.rtl', fixed, flat, :extended='searchIsShown && $vuetify.breakpoint.smAndDown')
     v-toolbar(color='deep-purple', flat, slot='extension', v-if='searchIsShown && $vuetify.breakpoint.smAndDown')
       v-text-field(
         ref='searchFieldMobile'
@@ -19,7 +19,7 @@
       )
     v-layout(row)
       v-flex(xs5, md4)
-        v-toolbar.nav-header-inner(color='black', dark, flat, :class='$vuetify.rtl ? `pr-3` : `pl-3`')
+        v-toolbar.nav-header-inner(:color='headerColor', dark, flat, :class='$vuetify.rtl ? `pr-3` : `pl-3`')
           v-avatar(tile, size='34', @click='goHome')
             v-img.org-logo(:src='logoUrl')
           //- v-menu(open-on-hover, offset-y, bottom, left, min-width='250', transition='slide-y-transition')
@@ -46,7 +46,7 @@
           v-toolbar-title(:class='{ "mx-3": $vuetify.breakpoint.mdAndUp, "mx-1": $vuetify.breakpoint.smAndDown }')
             span.subheading {{title}}
       v-flex(md4, v-if='$vuetify.breakpoint.mdAndUp')
-        v-toolbar.nav-header-inner(color='black', dark, flat)
+        v-toolbar.nav-header-inner(:color='headerColor', dark, flat)
           slot(name='mid')
             transition(name='navHeaderSearch', v-if='searchIsShown')
               v-text-field(
@@ -76,7 +76,7 @@
                   v-icon(color='grey') mdi-tag-multiple
               span {{$t('common:header.browseTags')}}
       v-flex(xs7, md4)
-        v-toolbar.nav-header-inner.pr-4(color='black', dark, flat)
+        v-toolbar.nav-header-inner.pr-4(:color='headerColor', dark, flat)
           v-spacer
           .navHeaderLoading.mr-3
             v-progress-circular(indeterminate, color='blue', :size='22', :width='2' v-show='isLoading')
@@ -189,6 +189,12 @@
             v-divider(vertical)
 
           //- ACCOUNT
+
+          v-tooltip(bottom, v-if='isAuthenticated')
+            template(v-slot:activator='{ on }')
+              v-btn(icon, tile, height='64', v-on='on', href='/boards', :aria-label='`Boards`')
+                v-icon(color='grey') mdi-view-kanban
+            span Boards
 
           v-menu(v-if='isAuthenticated', offset-y, bottom, min-width='300', transition='slide-y-transition', left)
             template(v-slot:activator='{ on: menu, attrs }')
@@ -340,7 +346,8 @@ export default {
     hasAnyPagePermissions () {
       return this.hasAdminPermission || this.hasWritePagesPermission || this.hasManagePagesPermission ||
         this.hasDeletePagesPermission || this.hasReadSourcePermission || this.hasReadHistoryPermission
-    }
+    },
+    headerColor: get('site/headerColor')
   },
   created () {
     if (this.hideSearch || this.dense || this.$vuetify.breakpoint.smAndDown) {

@@ -35,6 +35,8 @@ module.exports = class User extends Model {
         isSystem: {type: 'boolean'},
         isActive: {type: 'boolean'},
         isVerified: {type: 'boolean'},
+        lastActiveAt: {type: ['string', 'null']},
+        chatEnabled: {type: 'boolean', default: true},
         createdAt: {type: 'string'},
         updatedAt: {type: 'string'}
       }
@@ -446,6 +448,7 @@ module.exports = class User extends Model {
         lc: user.localeCode,
         df: user.dateFormat,
         ap: user.appearance,
+        ce: user.chatEnabled,
         // defaultEditor: user.defaultEditor,
         permissions: user.getGlobalPermissions(),
         groups: user.getGroups()
@@ -652,6 +655,9 @@ module.exports = class User extends Model {
         await newUsr.$relatedQuery('groups').relate(groups)
       }
 
+      // -> Webhook Trigger
+      WIKI.webhooks.trigger('user:created', newUsr)
+
       if (sendWelcomeEmail) {
         // Send welcome email
         await WIKI.mail.send({
@@ -678,7 +684,7 @@ module.exports = class User extends Model {
    *
    * @param {Object} param0 User ID and fields to update
    */
-  static async updateUser ({ id, email, name, newPassword, groups, location, jobTitle, timezone, dateFormat, appearance }) {
+  static async updateUser ({ id, email, name, newPassword, groups, location, jobTitle, timezone, dateFormat, appearance, chatEnabled }) {
     const usr = await WIKI.models.users.query().findById(id)
     if (usr) {
       let usrData = {}
@@ -730,7 +736,13 @@ module.exports = class User extends Model {
       if (!_.isNil(appearance) && appearance !== usr.appearance) {
         usrData.appearance = appearance
       }
+      if (!_.isNil(chatEnabled) && chatEnabled !== usr.chatEnabled) {
+        usrData.chatEnabled = chatEnabled
+      }
       await WIKI.models.users.query().patch(usrData).findById(id)
+
+      // -> Webhook Trigger
+      WIKI.webhooks.trigger('user:updated', { id, ...usrData })
     } else {
       throw new WIKI.Error.UserNotFound()
     }
@@ -752,6 +764,9 @@ module.exports = class User extends Model {
 
       await WIKI.models.userKeys.query().delete().where('userId', id)
       await WIKI.models.users.query().deleteById(id)
+
+      // -> Webhook Trigger
+      WIKI.webhooks.trigger('user:deleted', usr)
     } else {
       throw new WIKI.Error.UserNotFound()
     }
@@ -832,6 +847,9 @@ module.exports = class User extends Model {
         if (_.get(localStrg, 'autoEnrollGroups.v', []).length > 0) {
           await newUsr.$relatedQuery('groups').relate(localStrg.autoEnrollGroups.v)
         }
+
+        // -> Webhook Trigger
+        WIKI.webhooks.trigger('user:created', newUsr)
 
         if (verify) {
           // Create verification token

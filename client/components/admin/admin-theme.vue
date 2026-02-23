@@ -3,7 +3,7 @@
     v-layout(row wrap)
       v-flex(xs12)
         .admin-header
-          img.animated.fadeInUp(src='/_assets/svg/icon-paint-palette.svg', alt='Theme', style='width: 80px;')
+          img.animated.fadeInUp(src='/_assets/img/tbdc-agro-logo.png', alt='TBDC Agro', style='width: 120px; border-radius: 8px;')
           .admin-header-title
             .headline.primary--text.animated.fadeInLeft {{$t('admin:theme.title')}}
             .subtitle-1.grey--text.animated.fadeInLeft.wait-p2s {{$t('admin:theme.subtitle')}}
@@ -61,9 +61,38 @@
                     outlined
                     prepend-icon='mdi-border-vertical'
                     v-model='config.tocPosition'
-                    label='Table of Contents Position'
-                    persistent-hint
                     hint='Select whether the table of contents is shown on the left, right or not at all.'
+                    )
+                  v-divider.mt-3
+                  .subtitle-2.mb-2 Custom Colors
+                  v-layout(row wrap)
+                    v-flex(xs4)
+                      v-text-field(v-model='config.primaryColor', label='Primary Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.primaryColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.primaryColor', flat)
+                    v-flex(xs4)
+                      v-text-field(v-model='config.headerColor', label='Header Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.headerColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.headerColor', flat)
+                    v-flex(xs4)
+                      v-text-field(v-model='config.footerColor', label='Footer Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.footerColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.footerColor', flat)
+                  v-switch.mt-3(
+                    inset
+                    v-model='config.chatEnabled'
+                    label='Enable Corporate Chat'
+                    persistent-hint
+                    hint='Display the chat widget for all users on the site.'
                     )
             v-flex(lg6 xs12)
               //- v-card.animated.fadeInUp.wait-p2s
@@ -154,7 +183,11 @@ export default {
         tocPosition: 'left',
         injectCSS: '',
         injectHead: '',
-        injectBody: ''
+        injectBody: '',
+        primaryColor: '#1976d2',
+        headerColor: '#212121',
+        footerColor: '#212121',
+        chatEnabled: true
       },
       darkModeInitial: false
     }
@@ -216,7 +249,11 @@ export default {
             tocPosition: this.config.tocPosition,
             injectCSS: this.config.injectCSS,
             injectHead: this.config.injectHead,
-            injectBody: this.config.injectBody
+            injectBody: this.config.injectBody,
+            primaryColor: this.config.primaryColor,
+            headerColor: this.config.headerColor,
+            footerColor: this.config.footerColor,
+            chatEnabled: this.config.chatEnabled
           }
         })
         const resp = _.get(respRaw, 'data.theming.setConfig.responseResult', {})

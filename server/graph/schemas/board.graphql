@@ -1,0 +1,239 @@
+# ===============================================
+# BOARDS (KANBAN)
+# ===============================================
+
+extend type Query {
+  boards: BoardQuery
+}
+
+extend type Mutation {
+  boards: BoardMutation
+}
+
+type BoardQuery {
+  list(includeArchived: Boolean): [BoardSummary] @auth(requires: ["read:pages"])
+  board(id: Int!): BoardDetail @auth(requires: ["read:pages"])
+  groups: [BoardGroupOption] @auth(requires: ["read:pages"])
+  users(boardId: Int!): [BoardUser] @auth(requires: ["read:pages"])
+  teams: [BoardTeam] @auth(requires: ["read:pages"])
+}
+
+type BoardMutation {
+  createBoard(
+    title: String!
+    description: String
+    color: String
+    icon: String
+    isPublic: Boolean
+    groupIds: [Int!]
+  ): BoardDetail @auth(requires: ["read:pages"])
+
+  updateBoard(
+    id: Int!
+    title: String
+    description: String
+    color: String
+    icon: String
+    isArchived: Boolean
+    isPublic: Boolean
+    settings: String
+  ): BoardDetail @auth(requires: ["read:pages"])
+
+  deleteBoard(id: Int!): DefaultResponse @auth(requires: ["read:pages"])
+
+  saveBoardGroups(
+    boardId: Int!
+    groups: [BoardGroupAccessInput!]!
+  ): BoardDetail @auth(requires: ["read:pages"])
+
+  createStage(
+    boardId: Int!
+    title: String!
+    color: String
+    wipLimit: Int
+    isDone: Boolean
+  ): BoardStage @auth(requires: ["read:pages"])
+
+  updateStage(
+    id: Int!
+    title: String
+    color: String
+    wipLimit: Int
+    isDone: Boolean
+  ): BoardStage @auth(requires: ["read:pages"])
+
+  moveStage(
+    boardId: Int!
+    stageId: Int!
+    targetPosition: Int!
+  ): [BoardStage] @auth(requires: ["read:pages"])
+
+  deleteStage(id: Int!): DefaultResponse @auth(requires: ["read:pages"])
+
+  createCard(
+    boardId: Int!
+    stageId: Int!
+    title: String!
+    description: String
+    priority: String
+    status: String
+    startDate: String
+    dueDate: String
+    assigneeId: Int
+    estimatePoints: Int
+    coverColor: String
+    labels: [String!]
+    checklist: [String!]
+    attachments: [String!]
+    watchers: [Int!]
+    customFields: String
+  ): BoardCard @auth(requires: ["read:pages"])
+
+  updateCard(
+    id: Int!
+    title: String
+    description: String
+    priority: String
+    status: String
+    startDate: String
+    dueDate: String
+    completedAt: String
+    assigneeId: Int
+    estimatePoints: Int
+    coverColor: String
+    labels: [String!]
+    checklist: [String!]
+    attachments: [String!]
+    watchers: [Int!]
+    customFields: String
+    isArchived: Boolean
+  ): BoardCard @auth(requires: ["read:pages"])
+
+  moveCard(
+    cardId: Int!
+    targetStageId: Int!
+    targetPosition: Int!
+  ): BoardCard @auth(requires: ["read:pages"])
+
+  deleteCard(id: Int!): DefaultResponse @auth(requires: ["read:pages"])
+
+  createTeam(
+    name: String!
+    description: String
+    color: String
+    memberIds: [Int!]
+  ): BoardTeam @auth(requires: ["read:pages"])
+
+  updateTeam(
+    id: Int!
+    name: String
+    description: String
+    color: String
+    isArchived: Boolean
+    memberIds: [Int!]
+  ): BoardTeam @auth(requires: ["read:pages"])
+
+  deleteTeam(id: Int!): DefaultResponse @auth(requires: ["read:pages"])
+
+  linkTeamBoard(teamId: Int!, boardId: Int!): DefaultResponse @auth(requires: ["read:pages"])
+  unlinkTeamBoard(teamId: Int!, boardId: Int!): DefaultResponse @auth(requires: ["read:pages"])
+}
+
+input BoardGroupAccessInput {
+  groupId: Int!
+  accessLevel: String!
+}
+
+type BoardGroupOption {
+  id: Int!
+  name: String!
+}
+
+type BoardUser {
+  id: Int!
+  name: String!
+  email: String!
+  pictureUrl: String
+}
+
+type BoardSummary {
+  id: Int!
+  title: String!
+  description: String
+  color: String
+  icon: String
+  isArchived: Boolean!
+  isPublic: Boolean!
+  createdById: Int
+  stagesCount: Int!
+  cardsCount: Int!
+}
+
+type BoardDetail {
+  id: Int!
+  title: String!
+  description: String
+  color: String
+  icon: String
+  isArchived: Boolean!
+  isPublic: Boolean!
+  settings: String
+  createdById: Int
+  groups: [BoardGroupAccess!]!
+  teams: [BoardTeam!]!
+  stages: [BoardStage!]!
+}
+
+type BoardGroupAccess {
+  groupId: Int!
+  groupName: String!
+  accessLevel: String!
+}
+
+type BoardTeam {
+  id: Int!
+  name: String!
+  description: String
+  color: String
+  isArchived: Boolean!
+  members: [BoardUser!]!
+  boardIds: [Int!]!
+}
+
+type BoardStage {
+  id: Int!
+  boardId: Int!
+  title: String!
+  color: String
+  position: Int!
+  wipLimit: Int
+  isDone: Boolean!
+  cards: [BoardCard!]!
+}
+
+type BoardCard {
+  id: Int!
+  boardId: Int!
+  stageId: Int!
+  title: String!
+  description: String
+  position: Int!
+  priority: String
+  status: String
+  startDate: String
+  dueDate: String
+  completedAt: String
+  assigneeId: Int
+  assigneeName: String
+  reporterId: Int
+  estimatePoints: Int
+  coverColor: String
+  isArchived: Boolean!
+  labels: [String!]!
+  checklist: [String!]!
+  attachments: [String!]!
+  watchers: [Int!]!
+  customFields: String
+  createdAt: String!
+  updatedAt: String!
+}

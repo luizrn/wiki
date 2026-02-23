@@ -153,7 +153,9 @@ Vue.prototype.Velocity = Velocity
 // ====================================
 
 Vue.component('Admin', () => import(/* webpackChunkName: "admin" */ './components/admin.vue'))
+Vue.component('Boards', () => import(/* webpackChunkName: "boards" */ './components/boards.vue'))
 Vue.component('Comments', () => import(/* webpackChunkName: "comments" */ './components/comments.vue'))
+Vue.component('ChatWidget', () => import(/* webpackChunkName: "ui-extra" */ './components/common/chat-widget.vue'))
 Vue.component('Editor', () => import(/* webpackPrefetch: -100, webpackChunkName: "editor" */ './components/editor.vue'))
 Vue.component('History', () => import(/* webpackChunkName: "history" */ './components/history.vue'))
 Vue.component('Loader', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/loader.vue'))
@@ -211,7 +213,15 @@ let bootstrap = () => {
     vuetify: new Vuetify({
       rtl: siteConfig.rtl,
       theme: {
-        dark: darkModeEnabled
+        dark: darkModeEnabled,
+        themes: {
+          light: {
+            primary: siteConfig.primaryColor || '#1976d2'
+          },
+          dark: {
+            primary: siteConfig.primaryColor || '#1976d2'
+          }
+        }
       }
     }),
     mounted () {

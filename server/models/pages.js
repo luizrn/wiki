@@ -348,6 +348,9 @@ module.exports = class Page extends Model {
       })
     }
 
+    // -> Webhook Trigger
+    WIKI.webhooks.trigger('page:created', page)
+
     // -> Reconnect Links
     await WIKI.models.pages.reconnectLinks({
       locale: page.localeCode,
@@ -458,6 +461,9 @@ module.exports = class Page extends Model {
         page
       })
     }
+
+    // -> Webhook Trigger
+    WIKI.webhooks.trigger('page:updated', page)
 
     // -> Perform move?
     if ((opts.locale && opts.locale !== page.localeCode) || (opts.path && opts.path !== page.path)) {
@@ -765,6 +771,13 @@ module.exports = class Page extends Model {
       })
     }
 
+    // -> Webhook Trigger
+    WIKI.webhooks.trigger('page:moved', {
+      ...page,
+      destinationPath: opts.destinationPath,
+      destinationLocaleCode: opts.destinationLocale
+    })
+
     // -> Reconnect Links : Changing old links to the new path
     await WIKI.models.pages.reconnectLinks({
       sourceLocale: page.localeCode,
@@ -827,6 +840,9 @@ module.exports = class Page extends Model {
         page
       })
     }
+
+    // -> Webhook Trigger
+    WIKI.webhooks.trigger('page:deleted', page)
 
     // -> Reconnect Links
     await WIKI.models.pages.reconnectLinks({

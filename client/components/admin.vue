@@ -95,6 +95,12 @@
             v-list-item(to='/utilities', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-wrench-outline
               v-list-item-title {{ $t('admin:utilities.title') }}
+            v-list-item(to='/webhooks', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-webhook
+              v-list-item-title Webhooks
+            v-list-item(to='/public-links', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-link-variant
+              v-list-item-title Links Públicos
             v-list-group(
               to='/dev'
               no-action
@@ -173,6 +179,7 @@ const router = new VueRouter({
     { path: '/system', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-system.vue') },
     { path: '/utilities', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-utilities.vue') },
     { path: '/webhooks', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-webhooks.vue') },
+    { path: '/public-links', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-public-links.vue') },
     { path: '/dev-flags', component: () => import(/* webpackChunkName: "admin-dev" */ './admin/admin-dev-flags.vue') },
     { path: '/contribute', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-contribute.vue') }
   ]

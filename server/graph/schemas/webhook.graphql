@@ -1,0 +1,70 @@
+# ===============================================
+# WEBHOOKS
+# ===============================================
+
+extend type Query {
+  webhooks: WebhooksQuery
+}
+
+extend type Mutation {
+  webhooks: WebhooksMutation
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+type WebhooksQuery {
+  list: [Webhook] @auth(requires: ["manage:system"])
+  webhook(id: Int!): Webhook @auth(requires: ["manage:system"])
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+type WebhooksMutation {
+  create(
+    title: String!
+    description: String
+    url: String!
+    events: [String]!
+    isEnabled: Boolean!
+    secret: String
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  update(
+    id: Int!
+    title: String
+    description: String
+    url: String
+    events: [String]
+    isEnabled: Boolean
+    secret: String
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  delete(
+    id: Int!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  test(
+    id: Int!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+}
+
+# -----------------------------------------------
+# TYPES
+# -----------------------------------------------
+
+type Webhook {
+  id: Int!
+  title: String!
+  description: String
+  logo: String
+  url: String!
+  events: [String]!
+  isEnabled: Boolean!
+  secret: String
+  createdAt: Date!
+  updatedAt: Date!
+}

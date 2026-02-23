@@ -1,0 +1,10 @@
+mutation($id: Int!) {
+  webhooks {
+    delete(id: $id) {
+      responseResult {
+        message
+        status
+      }
+    }
+  }
+}

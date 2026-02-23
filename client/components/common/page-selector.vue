@@ -6,97 +6,117 @@
     overlay-opacity='.7'
     )
     v-card.page-selector
-      .dialog-header.is-blue
-        v-icon.mr-3(color='white') mdi-page-next-outline
-        .body-1(v-if='mode === `create`') {{$t('common:pageSelector.createTitle')}}
-        .body-1(v-else-if='mode === `move`') {{$t('common:pageSelector.moveTitle')}}
-        .body-1(v-else-if='mode === `select`') {{$t('common:pageSelector.selectTitle')}}
-        v-spacer
-        v-progress-circular(
-          indeterminate
-          color='white'
-          :size='20'
-          :width='2'
-          v-show='searchLoading'
-          )
-      .d-flex
-        v-flex.grey(xs5, :class='$vuetify.theme.dark ? `darken-4` : `lighten-3`')
-          v-toolbar(color='grey darken-3', dark, dense, flat)
-            .body-2 {{$t('common:pageSelector.virtualFolders')}}
-            v-spacer
-            v-btn(icon, tile, href='https://docs.requarks.io/guide/pages#folders', target='_blank')
-              v-icon mdi-help-box
-          div(style='height:400px;')
-            vue-scroll(:ops='scrollStyle')
-              v-treeview(
-                :key='`pageTree-` + treeViewCacheId'
-                :active.sync='currentNode'
-                :open.sync='openNodes'
-                :items='tree'
-                :load-children='fetchFolders'
-                dense
-                expand-icon='mdi-menu-down-outline'
-                item-id='path'
-                item-text='title'
-                activatable
-                hoverable
-                )
-                template(slot='prepend', slot-scope='{ item, open, leaf }')
-                  v-icon mdi-{{ open ? 'folder-open' : 'folder' }}
-        v-flex(xs7)
-          v-toolbar(color='blue darken-2', dark, dense, flat)
-            .body-2 {{$t('common:pageSelector.pages')}}
-            //- v-spacer
-            //- v-btn(icon, tile, disabled): v-icon mdi-content-save-move-outline
-            //- v-btn(icon, tile, disabled): v-icon mdi-trash-can-outline
-          div(v-if='currentPages.length > 0', style='height:400px;')
-            vue-scroll(:ops='scrollStyle')
-              v-list.py-0(dense)
-                v-list-item-group(
-                  v-model='currentPage'
-                  color='primary'
+      v-stepper(v-model='step')
+        v-stepper-header.primary.darken-1(dark)
+          v-stepper-step(:complete='step > 1', step='1', color='white', light)
+            span.white--text {{ $t('common:pageSelector.stepLocation') !== 'common:pageSelector.stepLocation' ? $t('common:pageSelector.stepLocation') : 'Localização' }}
+          v-divider
+          v-stepper-step(step='2', color='white', light)
+            span.white--text {{ $t('common:pageSelector.stepName') !== 'common:pageSelector.stepName' ? $t('common:pageSelector.stepName') : 'Nome da Página' }}
+
+        v-stepper-items
+          //- STEP 1: Location & Folders
+          v-stepper-content.pa-0(step='1')
+            .d-flex.flex-column
+              v-toolbar(color='grey darken-3', dark, dense, flat)
+                v-icon.mr-2 mdi-folder-search-outline
+                .body-2 {{ $t('common:pageSelector.virtualFolders') }}
+                v-spacer
+                v-btn(icon, small, @click='showNewFolderDialog = true', color='success')
+                  v-icon mdi-folder-plus
+                v-btn(icon, tile, href='https://docs.requarks.io/guide/pages#folders', target='_blank')
+                  v-icon mdi-help-box
+
+              div(style='height:400px;')
+                vue-scroll(:ops='scrollStyle')
+                  v-treeview(
+                    :key='`pageTree-` + treeViewCacheId'
+                    :active.sync='currentNode'
+                    :open.sync='openNodes'
+                    :items='tree'
+                    :load-children='fetchFolders'
+                    dense
+                    expand-icon='mdi-menu-down-outline'
+                    item-id='path'
+                    item-text='title'
+                    activatable
+                    hoverable
+                    transition
+                    )
+                    template(slot='prepend', slot-scope='{ item, open, leaf }')
+                      v-icon(color='orange darken-2') mdi-{{ open ? 'folder-open' : 'folder' }}
+
+              v-divider
+              v-card-actions.grey.pa-3(:class='$vuetify.theme.dark ? `darken-4` : `lighten-3`')
+                .caption.grey--text {{ $t('common:pageSelector.selectedPath') }}:
+                code.ml-2 /{{ currentFolderPath || '(root)' }}
+                v-spacer
+                v-btn(text, @click='close') {{ $t('common:actions.cancel') }}
+                v-btn(color='primary', @click='step = 2', :disabled='!isFolderSelected')
+                  span {{ $t('common:actions.next') }}
+                  v-icon(right) mdi-chevron-right
+
+          //- STEP 2: Page Name
+          v-stepper-content.pa-0(step='2')
+            v-container.pa-5(fluid)
+              v-row
+                v-col(cols='12')
+                  .overline.mb-2 {{ $t('common:pageSelector.pageDetails') !== 'common:pageSelector.pageDetails' ? $t('common:pageSelector.pageDetails') : 'Detalhes da Página' }}
+                  v-select(
+                    solo
+                    flat
+                    :label='$t("common:pageSelector.language") !== "common:pageSelector.language" ? $t("common:pageSelector.language") : "Idioma"'
+                    :items='namespaces'
+                    v-model='currentLocale'
+                    prepend-inner-icon='mdi-translate'
+                    background-color='grey lighten-4'
+                    :dark='false'
+                    v-if='namespaces.length > 1'
                   )
-                  template(v-for='(page, idx) of currentPages')
-                    v-list-item(:key='`page-` + page.id', :value='page')
-                      v-list-item-icon: v-icon mdi-text-box
-                      v-list-item-title {{page.title}}
-                    v-divider(v-if='idx < pages.length - 1')
-          v-alert.animated.fadeIn(
-            v-else
-            text
-            color='orange'
-            prominent
-            icon='mdi-alert'
-            )
-            .body-2 {{$t('common:pageSelector.folderEmptyWarning')}}
-      v-card-actions.grey.pa-2(:class='$vuetify.theme.dark ? `darken-2` : `lighten-1`', v-if='!mustExist')
-        v-select(
-          solo
-          dark
-          flat
-          background-color='grey darken-3-d2'
-          hide-details
-          single-line
-          :items='namespaces'
-          style='flex: 0 0 100px; border-radius: 4px 0 0 4px;'
-          v-model='currentLocale'
+                  v-text-field(
+                    ref='pathIpt'
+                    solo
+                    flat
+                    :label='$t("common:pageSelector.pageName") !== "common:pageSelector.pageName" ? $t("common:pageSelector.pageName") : "Nome da Página"'
+                    prefix='/'
+                    v-model='currentPathName'
+                    background-color='grey lighten-4'
+                    placeholder='meu-novo-artigo'
+                    @keyup.enter='open'
+                    :dark='false'
+                    autofocus
+                  )
+                  .mt-4.pa-4.rounded.grey(:class='$vuetify.theme.dark ? `darken-4` : `lighten-4`')
+                    .caption.grey--text {{ $t('common:pageSelector.finalPathPreview') !== 'common:pageSelector.finalPathPreview' ? $t('common:pageSelector.finalPathPreview') : 'Prévia do Caminho Final' }}
+                    .subtitle-1.primary--text
+                      strong /{{ currentFolderPath }}{{ currentFolderPath ? '/' : '' }}{{ currentPathName }}
+
+              v-row.mt-5
+                v-col(cols='12', class='d-flex align-center')
+                  v-btn(text, @click='step = 1')
+                    v-icon(left) mdi-chevron-left
+                    span {{ $t('common:actions.back') }}
+                  v-spacer
+                  v-btn.px-6(color='primary', x-large, @click='open', :disabled='!isValidPath')
+                    v-icon(left) mdi-check
+                    span {{ $t('common:actions.createPage') !== 'common:actions.createPage' ? $t('common:actions.createPage') : 'Criar Página' }}
+
+    //- New Folder Dialog
+    v-dialog(v-model='showNewFolderDialog', max-width='400')
+      v-card
+        v-card-title {{ $t('common:pageSelector.createNewFolder') !== 'common:pageSelector.createNewFolder' ? $t('common:pageSelector.createNewFolder') : 'Criar Nova Pasta' }}
+        v-card-text
+          v-text-field(
+            v-model='newFolderName'
+            :label='$t("common:pageSelector.folderName") !== "common:pageSelector.folderName" ? $t("common:pageSelector.folderName") : "Nome da Pasta"'
+            placeholder='folder-name'
+            @keyup.enter='createNewFolder'
+            autofocus
           )
-        v-text-field(
-          ref='pathIpt'
-          solo
-          hide-details
-          prefix='/'
-          v-model='currentPath'
-          flat
-          clearable
-          style='border-radius: 0 4px 4px 0;'
-        )
-      v-card-chin
-        v-spacer
-        v-btn(text, @click='close') {{$t('common:actions.cancel')}}
-        v-btn.px-4(color='primary', @click='open', :disabled='!isValidPath')
-          v-icon(left) mdi-check
-          span {{$t('common:actions.select')}}
+        v-card-actions
+          v-spacer
+          v-btn(text, @click='showNewFolderDialog = false') {{ $t('common:actions.cancel') }}
+          v-btn(color='primary', @click='createNewFolder', :disabled='!newFolderName') {{ $t('common:actions.create') }}
 </template>
 
 <script>
@@ -136,23 +156,34 @@ export default {
   },
   data() {
     return {
+      step: 1,
+      showNewFolderDialog: false,
+      newFolderName: '',
       treeViewCacheId: 0,
       searchLoading: false,
       currentLocale: siteConfig.lang,
       currentFolderPath: '',
-      currentPath: 'new-page',
+      currentPathName: 'new-page',
       currentPage: null,
-      currentNode: [0],
+      currentNode: [],
       openNodes: [0],
       tree: [
         {
           id: 0,
           title: '/ (root)',
+          path: '',
           children: []
         }
       ],
       pages: [],
-      all: [],
+      all: [
+        {
+          id: 0,
+          title: '/ (root)',
+          path: '',
+          parent: null
+        }
+      ],
       namespaces: siteLangs.length ? siteLangs.map(ns => ns.code) : [siteConfig.lang],
       scrollStyle: {
         vuescroll: {},
@@ -182,14 +213,18 @@ export default {
     currentPages () {
       return _.sortBy(_.filter(this.pages, ['parent', _.head(this.currentNode) || 0]), ['title', 'path'])
     },
+    isFolderSelected () {
+      return this.currentNode.length > 0 || this.currentNode[0] === 0
+    },
     isValidPath () {
-      if (!this.currentPath) {
+      if (!this.currentPathName) {
         return false
       }
       if (this.mustExist && !this.currentPage) {
         return false
       }
-      const firstSection = _.head(this.currentPath.split('/'))
+      const fullPath = _.compact([this.currentFolderPath, this.currentPathName]).join('/')
+      const firstSection = _.head(fullPath.split('/'))
       if (firstSection.length <= 1) {
         return false
       } else if (localeSegmentRegex.test(firstSection)) {
@@ -207,35 +242,24 @@ export default {
   watch: {
     isShown (newValue, oldValue) {
       if (newValue && !oldValue) {
-        this.currentPath = this.path
+        this.step = 1
+        this.currentPathName = _.last(this.path.split('/'))
+        this.currentFolderPath = _.initial(this.path.split('/')).join('/')
         this.currentLocale = this.locale
-        _.delay(() => {
-          this.$refs.pathIpt.focus()
-        })
+        this.currentNode = []
       }
     },
     currentNode (newValue, oldValue) {
-      if (newValue.length < 1) { // force a selection
-        this.$nextTick(() => {
-          this.currentNode = oldValue
-        })
-      } else {
-        const current = _.find(this.all, ['id', newValue[0]])
-
-        if (this.openNodes.indexOf(newValue[0]) < 0) { // auto open and load children
-          if (current) {
-            if (this.openNodes.indexOf(current.parent) < 0) {
-              this.$nextTick(() => {
-                this.openNodes.push(current.parent)
-              })
-            }
+      if (newValue.length > 0) {
+        const current = _.find(this.all, ['path', newValue[0]])
+        if (current) {
+          this.currentFolderPath = current.path
+          if (this.openNodes.indexOf(current.id) < 0) {
+            this.openNodes.push(current.id)
           }
-          this.$nextTick(() => {
-            this.openNodes.push(newValue[0])
-          })
         }
-
-        this.currentPath = _.compact([_.get(current, 'path', ''), _.last(this.currentPath.split('/'))]).join('/')
+      } else {
+        this.currentFolderPath = ''
       }
     },
     currentPage (newValue, oldValue) {
@@ -265,16 +289,58 @@ export default {
       this.isShown = false
     },
     open() {
+      const fullPath = _.compact([this.currentFolderPath, this.currentPathName]).join('/')
       const exit = this.openHandler({
         locale: this.currentLocale,
-        path: this.currentPath,
+        path: fullPath,
         id: (this.mustExist && this.currentPage) ? this.currentPage.pageId : 0
       })
       if (exit !== false) {
         this.close()
       }
     },
+    createNewFolder() {
+      if (!this.newFolderName) return
+
+      const slug = _.kebabCase(this.newFolderName)
+      const newPath = _.compact([this.currentFolderPath, slug]).join('/')
+
+      // Check if folder already exists in current children
+      const parentNode = _.find(this.all, ['path', this.currentFolderPath])
+      if (parentNode && parentNode.children && _.some(parentNode.children, ['path', newPath])) {
+        this.$store.commit('showNotification', {
+          message: 'Esta pasta já existe.',
+          style: 'warning'
+        })
+        return
+      }
+
+      const newId = Math.floor(Math.random() * 1000000) + 10000
+      const newFolder = {
+        id: newId,
+        title: this.newFolderName,
+        path: newPath,
+        isFolder: true,
+        parent: parentNode ? parentNode.id : 0,
+        children: []
+      }
+
+      if (parentNode) {
+        if (!parentNode.children) parentNode.children = []
+        parentNode.children.push(newFolder)
+      } else {
+        this.tree[0].children.push(newFolder)
+      }
+
+      this.all.push(newFolder)
+      this.currentNode = [newPath]
+      this.newFolderName = ''
+      this.showNewFolderDialog = false
+      this.treeViewCacheId++
+    },
     async fetchFolders (item) {
+      if (item.children && item.children.length > 0) return
+
       this.searchLoading = true
       const resp = await this.$apollo.query({
         query: gql`
@@ -301,11 +367,9 @@ export default {
       const items = _.get(resp, 'data.pages.tree', [])
       const itemFolders = _.filter(items, ['isFolder', true]).map(f => ({...f, children: []}))
       const itemPages = _.filter(items, i => i.pageId > 0)
-      if (itemFolders.length > 0) {
-        item.children = itemFolders
-      } else {
-        item.children = undefined
-      }
+
+      item.children = itemFolders.length > 0 ? itemFolders : undefined
+
       this.pages = _.unionBy(this.pages, itemPages, 'id')
       this.all = _.unionBy(this.all, items, 'id')
 

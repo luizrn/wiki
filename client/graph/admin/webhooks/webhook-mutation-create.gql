@@ -1,0 +1,24 @@
+mutation(
+  $title: String!
+  $description: String
+  $url: String!
+  $events: [String]!
+  $isEnabled: Boolean!
+  $secret: String
+) {
+  webhooks {
+    create(
+      title: $title
+      description: $description
+      url: $url
+      events: $events
+      isEnabled: $isEnabled
+      secret: $secret
+    ) {
+      responseResult {
+        message
+        status
+      }
+    }
+  }
+}

@@ -327,6 +327,17 @@ router.get(['/p', '/p/*'], (req, res, next) => {
 })
 
 /**
+ * Boards
+ */
+router.get(['/boards', '/boards/*'], (req, res, next) => {
+  if (!req.user || req.user.id < 1 || req.user.id === 2) {
+    return res.status(403).render('unauthorized', { action: 'view' })
+  }
+  _.set(res.locals, 'pageMeta.title', 'Boards')
+  res.render('boards')
+})
+
+/**
  * Source
  */
 router.get(['/s', '/s/*'], async (req, res, next) => {
@@ -393,6 +404,86 @@ router.get(['/s', '/s/*'], async (req, res, next) => {
 router.get(['/t', '/t/*'], (req, res, next) => {
   _.set(res.locals, 'pageMeta.title', 'Tags')
   res.render('tags')
+})
+
+/**
+ * Public Access Link
+ */
+router.get('/pub/:token', async (req, res, next) => {
+  try {
+    const link = await WIKI.models.pagePublicLinks.query()
+      .where('token', req.params.token)
+      .where('status', 'APPROVED')
+      .first()
+
+    if (!link) {
+      _.set(res.locals, 'pageMeta.title', 'Link Not Found or Expired')
+      return res.status(404).render('notfound', { action: 'view' })
+    }
+
+    // Increment views
+    await WIKI.models.pagePublicLinks.query().patch({
+      views: link.views + 1
+    }).findById(link.id)
+
+    // Get Page
+    const page = await WIKI.models.pages.getPage({
+      id: link.pageId,
+      userId: req.user.id,
+      isPrivate: false
+    })
+
+    if (!page) {
+      _.set(res.locals, 'pageMeta.title', 'Page Not Found')
+      return res.status(404).render('notfound', { action: 'view' })
+    }
+
+    _.set(res.locals, 'pageMeta.title', page.title)
+    _.set(res.locals, 'pageMeta.description', page.description)
+    _.set(res.locals, 'pageMeta.robots', 'noindex, nofollow')
+
+    // -> Build sidebar navigation (empty for public links to keep it simple and restricted)
+    const sidebar = []
+
+    // -> Build theme code injection
+    const injectCode = {
+      css: WIKI.config.theming.injectCSS,
+      head: WIKI.config.theming.injectHead,
+      body: WIKI.config.theming.injectBody
+    }
+
+    // Handle missing extra field
+    page.extra = page.extra || { css: '', js: '' }
+
+    if (!_.isEmpty(page.extra.css)) {
+      injectCode.css = `${injectCode.css}\n${page.extra.css}`
+    }
+
+    if (!_.isEmpty(page.extra.js)) {
+      injectCode.body = `${injectCode.body}\n${page.extra.js}`
+    }
+
+    // -> Convert page TOC
+    if (!_.isString(page.toc)) {
+      page.toc = JSON.stringify(page.toc)
+    }
+
+    // -> Render view
+    res.render('page', {
+      page,
+      sidebar,
+      injectCode,
+      comments: { codeTemplate: '', head: '', body: '', main: '' },
+      effectivePermissions: {
+        pages: { read: true, write: false, manage: false },
+        history: { read: false },
+        source: { read: false }
+      },
+      pageFilename: ''
+    })
+  } catch (err) {
+    next(err)
+  }
 })
 
 /**

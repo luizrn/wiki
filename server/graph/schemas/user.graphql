@@ -97,6 +97,7 @@ type UserMutation {
     timezone: String!
     dateFormat: String!
     appearance: String!
+    chatEnabled: Boolean
   ): UserTokenResponse
 
   changePassword(

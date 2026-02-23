@@ -1,0 +1,55 @@
+# ===============================================
+# PUBLIC LINKS
+# ===============================================
+
+extend type Query {
+  publicLinks: PublicLinksQuery
+}
+
+extend type Mutation {
+  publicLinks: PublicLinksMutation
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+type PublicLinksQuery {
+  list(status: String): [PublicLink] @auth(requires: ["manage:system"])
+  single(token: String!): PublicLink
+  byPage(pageId: Int!): [PublicLink] @auth(requires: ["read:pages"])
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+type PublicLinksMutation {
+  request(pageId: Int!): PublicLinkResponse @auth(requires: ["read:pages"])
+  approve(id: Int!): DefaultResponse @auth(requires: ["manage:system"])
+  reject(id: Int!): DefaultResponse @auth(requires: ["manage:system"])
+  revoke(id: Int!): DefaultResponse @auth(requires: ["manage:system", "write:pages"])
+}
+
+# -----------------------------------------------
+# TYPES
+# -----------------------------------------------
+
+type PublicLink {
+  id: Int!
+  pageId: Int!
+  token: String!
+  status: String!
+  views: Int!
+  expiresAt: String
+  createdAt: String!
+  updatedAt: String!
+  page: PageListItem
+  creator: UserMinimal
+  approver: UserMinimal
+}
+
+type PublicLinkResponse {
+  responseResult: ResponseStatus!
+  link: PublicLink
+}

@@ -32,6 +32,10 @@ type ThemingMutation {
     injectCSS: String
     injectHead: String
     injectBody: String
+    primaryColor: String
+    headerColor: String
+    footerColor: String
+    chatEnabled: Boolean
   ): DefaultResponse @auth(requires: ["manage:theme", "manage:system"])
 }
 
@@ -47,6 +51,10 @@ type ThemingConfig {
   injectCSS: String
   injectHead: String
   injectBody: String
+  primaryColor: String
+  headerColor: String
+  footerColor: String
+  chatEnabled: Boolean
 }
 
 type ThemingTheme {

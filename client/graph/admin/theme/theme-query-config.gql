@@ -8,6 +8,9 @@ query {
       injectCSS
       injectHead
       injectBody
+      primaryColor
+      headerColor
+      footerColor
     }
   }
 }

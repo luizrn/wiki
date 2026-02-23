@@ -39,6 +39,10 @@ module.exports = {
         table.text('content')
       })
     }
+    await WIKI.models.knex.raw(`CREATE INDEX IF NOT EXISTS "pagesVector_tokens_idx" ON "pagesVector" USING GIN ("tokens")`)
+    await WIKI.models.knex.raw(`CREATE INDEX IF NOT EXISTS "pagesVector_locale_idx" ON "pagesVector" ("locale")`)
+    await WIKI.models.knex.raw(`CREATE INDEX IF NOT EXISTS "pagesVector_path_idx" ON "pagesVector" ("path")`)
+
     // -> Create Words Index
     const wordsExists = await WIKI.models.knex.schema.hasTable('pagesWords')
     if (!wordsExists) {
@@ -47,8 +51,8 @@ module.exports = {
         CREATE TABLE "pagesWords" AS SELECT word FROM ts_stat(
           'SELECT to_tsvector(''simple'', "title") || to_tsvector(''simple'', "description") || to_tsvector(''simple'', "content") FROM "pagesVector"'
         )`)
-      await WIKI.models.knex.raw(`CREATE INDEX "pageWords_idx" ON "pagesWords" USING GIN (word gin_trgm_ops)`)
     }
+    await WIKI.models.knex.raw(`CREATE INDEX IF NOT EXISTS "pageWords_idx" ON "pagesWords" USING GIN (word gin_trgm_ops)`)
 
     WIKI.logger.info(`(SEARCH/POSTGRES) Initialization completed.`)
   },
@@ -75,8 +79,10 @@ module.exports = {
       }
       if (opts.path) {
         qry = `${qry} AND path ILIKE ?`
-        qryParams.push(`%${opts.path}`)
+        qryParams.push(`${opts.path}%`)
       }
+      qryEnd = `${qryEnd} LIMIT ?`
+      qryParams.push(WIKI.config.search.maxHits)
       const results = await WIKI.models.knex.raw(`
         ${qry}
         ${qryEnd}

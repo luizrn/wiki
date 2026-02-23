@@ -82,6 +82,14 @@
                 )
                 v-icon.mr-2(small) {{ editShortcutsObj.editMenuExternalIcon }}
                 span.text-none {{$t(`common:page.editExternal`, { name: editShortcutsObj.editMenuExternalName })}}
+              v-btn(
+                v-if='hasWritePagesPermission'
+                @click='pageRequestPublicLink'
+                depressed
+                small
+                )
+                v-icon.mr-2(small) mdi-link-variant
+                span.text-none Solicitar Link Público
       v-divider
       v-container.pl-5.pt-4(fluid, grid-list-xl)
         v-layout(row)
@@ -263,6 +271,18 @@
                         )
                         v-icon(size='20') mdi-history
                     span {{$t('common:header.history')}}
+                  v-tooltip(:right='$vuetify.rtl', :left='!$vuetify.rtl', v-if='hasWritePagesPermission')
+                    template(v-slot:activator='{ on }')
+                      v-btn(
+                        fab
+                        small
+                        color='white'
+                        light
+                        v-on='on'
+                        @click='pageRequestPublicLink'
+                        )
+                        v-icon(size='20') mdi-link-variant
+                    span Solicitar Link Público
                   v-tooltip(:right='$vuetify.rtl', :left='!$vuetify.rtl', v-if='hasReadSourcePermission')
                     template(v-slot:activator='{ on }')
                       v-btn(
@@ -354,6 +374,7 @@
         :aria-label='$t(`common:actions.returnToTop`)'
         )
         v-icon mdi-arrow-up
+    chat-widget(v-if='isAuthenticated && !printView')
 </template>
 
 <script>
@@ -366,6 +387,7 @@ import { get, sync } from 'vuex-pathify'
 import _ from 'lodash'
 import ClipboardJS from 'clipboard'
 import Vue from 'vue'
+import gql from 'graphql-tag'
 
 /* global siteLangs */
 
@@ -710,6 +732,39 @@ export default {
       this.$vuetify.goTo('#discussion', this.scrollOpts)
       if (focusNewComment) {
         document.querySelector('#discussion-new').focus()
+      }
+    },
+    async pageRequestPublicLink () {
+      try {
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`
+            mutation ($pageId: Int!) {
+              publicLinks {
+                request(pageId: $pageId) {
+                  responseResult {
+                    succeeded
+                    message
+                  }
+                }
+              }
+            }
+          `,
+          variables: {
+            pageId: this.pageId
+          }
+        })
+        const resp = data.publicLinks.request.responseResult
+        if (resp.succeeded) {
+          this.$store.commit('showNotification', {
+            message: resp.message,
+            style: 'success',
+            icon: 'check'
+          })
+        } else {
+          throw new Error(resp.message)
+        }
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
       }
     }
   }

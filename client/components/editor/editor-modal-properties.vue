@@ -21,8 +21,8 @@
         v-tab {{$t('editor:props.info')}}
         v-tab {{$t('editor:props.scheduling')}}
         v-tab(:disabled='!hasScriptPermission') {{$t('editor:props.scripts')}}
-        //- v-tab(disabled) {{$t('editor:props.social')}}
         v-tab(:disabled='!hasStylePermission') {{$t('editor:props.styles')}}
+        v-tab(v-if='pageId > 0') {{ $t('common:pageSelector.publicLink') !== 'common:pageSelector.publicLink' ? $t('common:pageSelector.publicLink') : 'Link Público' }}
         v-tab-item(transition='fade-transition', reverse-transition='fade-transition')
           v-card-text.pt-5
             .overline.pb-5 {{$t('editor:props.pageInfo')}}
@@ -233,13 +233,53 @@
         //-       inset
         //-       )
 
-        v-tab-item(:transition='false', :reverse-transition='false')
-          .editor-props-codeeditor-title
-            .overline {{$t('editor:props.css')}}
-          .editor-props-codeeditor
-            textarea(ref='codecss')
           .editor-props-codeeditor-hint
             .caption {{$t('editor:props.cssHint')}}
+
+        v-tab-item(transition='fade-transition', reverse-transition='fade-transition', v-if='pageId > 0')
+          v-card-text.pt-5
+            .overline.pb-2 {{ $t('common:pageSelector.publicAccessLink') !== 'common:pageSelector.publicAccessLink' ? $t('common:pageSelector.publicAccessLink') : 'Link de Acesso Público' }}
+
+            v-alert(v-if='!publicLink', type='info', text, outlined, icon='mdi-link-variant-plus')
+              .body-2 Nenhum link público foi gerado para esta página ainda.
+              v-btn.mt-3(color='primary', @click='requestPublicLink', :loading='requestingLink')
+                v-icon(left) mdi-plus
+                span Solicitar Link Público
+
+            v-card(v-else, outlined, flat, class='mb-5')
+              v-list-item
+                v-list-item-content
+                  v-list-item-overline Status: {{ publicLink.status }}
+                  v-list-item-title.primary--text(v-if='publicLink.status === "APPROVED"')
+                    code {{ publicUrl }}
+                    v-btn(icon, x-small, @click='copyPublicLink', title='Copiar Link')
+                      v-icon mdi-content-copy
+                  v-list-item-subtitle(v-else-if='publicLink.status === "PENDING"')
+                    | Aguardando aprovação administrativa...
+                  v-list-item-subtitle(v-else-if='publicLink.status === "REJECTED"')
+                    | Esta solicitação foi rejeitada por um administrador.
+                  v-list-item-subtitle(v-else-if='publicLink.status === "REVOKED"')
+                    | Este link foi revogado.
+                v-list-item-action(v-if='publicLink.status === "APPROVED" || publicLink.status === "PENDING"')
+                  v-btn(color='error', outlined, small, @click='revokePublicLink')
+                    v-icon(left) mdi-link-variant-off
+                    span Revogar
+
+              v-divider(v-if='publicLink.status === "APPROVED"')
+              v-card-text(v-if='publicLink.status === "APPROVED"')
+                v-row
+                  v-col(cols='4')
+                    .caption.grey--text Visualizações
+                    .body-1 {{ publicLink.views }}
+                  v-col(cols='8')
+                    .caption.grey--text Criado em
+                    .body-1 {{ publicLink.createdAt | moment('calendar') }}
+
+          v-divider
+          v-card-text.grey.pt-5(:class='$vuetify.theme.dark ? `darken-3-d3` : `lighten-5`')
+            .caption.grey--text
+              v-icon(left, small) mdi-information-outline
+              | Links públicos permitem que qualquer pessoa veja esta página sem precisar de login. O conteúdo não será indexado por buscadores (SEO).
 
     page-selector(:mode='pageSelectorMode', v-model='pageSelectorShown', :path='path', :locale='locale', :open-handler='setPath')
 </template>
@@ -280,7 +320,9 @@ export default {
         path: value => {
           return filenamePattern.test(value) || 'Invalid path. Please ensure it does not contain special characters, or begin/end in a slash or hashtag string.'
         }
-      }
+      },
+      publicLink: null,
+      requestingLink: false
     }
   },
   computed: {
@@ -289,6 +331,7 @@ export default {
       set(val) { this.$emit('input', val) }
     },
     mode: get('editor/mode'),
+    pageId: get('page/id'),
     title: sync('page/title'),
     description: sync('page/description'),
     locale: sync('page/locale'),
@@ -303,6 +346,9 @@ export default {
     hasStylePermission: get('page/effectivePermissions@pages.style'),
     pageSelectorMode () {
       return (this.mode === 'create') ? 'create' : 'move'
+    },
+    publicUrl () {
+      return this.publicLink ? `${window.location.origin}/pub/${this.publicLink.token}` : ''
     }
   },
   watch: {
@@ -340,6 +386,8 @@ export default {
             this.loadEditor(this.$refs.codecss, 'css')
           }, 100)
         })
+      } else if (newValue === 4 && this.pageId > 0) {
+        this.fetchPublicLink()
       }
     }
   },
@@ -392,6 +440,81 @@ export default {
         this.cm.refresh()
         this.cm.focus()
       })
+    },
+    async fetchPublicLink () {
+      try {
+        const { data } = await this.$apollo.query({
+          query: gql`
+            query ($pageId: Int!) {
+              publicLinks {
+                byPage(pageId: $pageId) {
+                  id
+                  token
+                  status
+                  views
+                  createdAt
+                }
+              }
+            }
+          `,
+          variables: { pageId: this.pageId },
+          fetchPolicy: 'network-only'
+        })
+        this.publicLink = _.first(_.get(data, 'publicLinks.byPage', [])) || null
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    async requestPublicLink () {
+      this.requestingLink = true
+      try {
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`
+            mutation ($pageId: Int!) {
+              publicLinks {
+                request(pageId: $pageId) {
+                  responseResult { succeeded message }
+                }
+              }
+            }
+          `,
+          variables: { pageId: this.pageId }
+        })
+        const resp = data.publicLinks.request.responseResult
+        if (resp.succeeded) {
+          this.$store.commit('showNotification', { message: resp.message, style: 'success' })
+          this.fetchPublicLink()
+        } else {
+          throw new Error(resp.message)
+        }
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      } finally {
+        this.requestingLink = false
+      }
+    },
+    async revokePublicLink () {
+      if (!this.publicLink) return
+      try {
+        await this.$apollo.mutate({
+          mutation: gql`
+            mutation ($id: Int!) {
+              publicLinks {
+                revoke(id: $id) { succeeded message }
+              }
+            }
+          `,
+          variables: { id: this.publicLink.id }
+        })
+        this.fetchPublicLink()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    copyPublicLink () {
+      if (!this.publicLink) return
+      navigator.clipboard.writeText(this.publicUrl)
+      this.$store.commit('showNotification', { message: 'Link copiado!', style: 'success' })
     }
   },
   apollo: {

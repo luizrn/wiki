@@ -1,0 +1,62 @@
+# ===============================================
+# CHAT
+# ===============================================
+
+extend type Query {
+  chat: ChatQuery
+}
+
+extend type Mutation {
+  chat: ChatMutation
+}
+
+extend type Subscription {
+  chatMessageReceived: ChatMessage @auth(requires: ["read:pages"])
+  userStatusChanged: ChatUserStatus @auth(requires: ["read:pages"])
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+type ChatQuery {
+  users(search: String): [ChatUser] @auth(requires: ["read:pages"])
+  messages(userId: Int!, limit: Int, offset: Int): [ChatMessage] @auth(requires: ["read:pages"])
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+type ChatMutation {
+  sendMessage(receiverId: Int!, message: String!): ChatMessage @auth(requires: ["read:pages"])
+  markAsRead(senderId: Int!): DefaultResponse @auth(requires: ["read:pages"])
+  updateStatus(status: String): DefaultResponse @auth(requires: ["read:pages"])
+}
+
+# -----------------------------------------------
+# TYPES
+# -----------------------------------------------
+
+type ChatUser {
+  id: Int!
+  name: String!
+  email: String!
+  pictureUrl: String
+  isOnline: Boolean!
+  lastActiveAt: String
+}
+
+type ChatMessage {
+  id: Int!
+  senderId: Int!
+  receiverId: Int!
+  message: String!
+  isRead: Boolean!
+  createdAt: String!
+}
+
+type ChatUserStatus {
+  userId: Int!
+  isOnline: Boolean!
+}

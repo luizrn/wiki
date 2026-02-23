@@ -312,6 +312,15 @@
                         )
                         v-icon(left) mdi-check
                         span {{$t('common:actions.ok')}}
+            v-divider
+            v-list-item
+              v-list-item-avatar(size='32')
+                v-icon mdi-chat
+              v-list-item-content
+                v-list-item-title Chat Corporativo
+                v-list-item-subtitle Exibir o widget de chat
+              v-list-item-action
+                v-switch(v-model='user.chatEnabled', color='primary')
 
         v-card.mt-3.animated.fadeInUp.wait-p3s
           v-toolbar(color='primary', dark, dense, flat)
@@ -373,6 +382,7 @@ export default {
         timezone: '',
         dateFormat: '',
         appearance: '',
+        chatEnabled: true,
         createdAt: '1970-01-01',
         updatedAt: '1970-01-01',
         lastLoginAt: '1970-01-01',
@@ -732,9 +742,9 @@ export default {
       try {
         const respRaw = await this.$apollo.mutate({
           mutation: gql`
-            mutation ($name: String!, $location: String!, $jobTitle: String!, $timezone: String!, $dateFormat: String!, $appearance: String!) {
+            mutation ($name: String!, $location: String!, $jobTitle: String!, $timezone: String!, $dateFormat: String!, $appearance: String!, $chatEnabled: Boolean) {
               users {
-                updateProfile(name: $name, location: $location, jobTitle: $jobTitle, timezone: $timezone, dateFormat: $dateFormat, appearance: $appearance) {
+                updateProfile(name: $name, location: $location, jobTitle: $jobTitle, timezone: $timezone, dateFormat: $dateFormat, appearance: $appearance, chatEnabled: $chatEnabled) {
                   responseResult {
                     succeeded
                     errorCode
@@ -752,7 +762,8 @@ export default {
             jobTitle: this.user.jobTitle,
             timezone: this.user.timezone,
             dateFormat: this.user.dateFormat,
-            appearance: this.user.appearance
+            appearance: this.user.appearance,
+            chatEnabled: this.user.chatEnabled
           }
         })
         const resp = _.get(respRaw, 'data.users.updateProfile.responseResult', {})
@@ -901,6 +912,7 @@ export default {
               timezone
               dateFormat
               appearance
+              chatEnabled
               createdAt
               updatedAt
               lastLoginAt

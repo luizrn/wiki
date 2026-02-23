@@ -27,7 +27,11 @@ module.exports = {
         tocPosition: WIKI.config.theming.tocPosition || 'left',
         injectCSS: new CleanCSS({ format: 'beautify' }).minify(WIKI.config.theming.injectCSS).styles,
         injectHead: WIKI.config.theming.injectHead,
-        injectBody: WIKI.config.theming.injectBody
+        injectBody: WIKI.config.theming.injectBody,
+        primaryColor: WIKI.config.theming.primaryColor || '#1976d2',
+        headerColor: WIKI.config.theming.headerColor || '#212121',
+        footerColor: WIKI.config.theming.footerColor || '#212121',
+        chatEnabled: _.get(WIKI.config.theming, 'chatEnabled', true)
       }
     }
   },
@@ -48,7 +52,11 @@ module.exports = {
           tocPosition: args.tocPosition || 'left',
           injectCSS: args.injectCSS || '',
           injectHead: args.injectHead || '',
-          injectBody: args.injectBody || ''
+          injectBody: args.injectBody || '',
+          primaryColor: args.primaryColor || '#1976d2',
+          headerColor: args.headerColor || '#212121',
+          footerColor: args.footerColor || '#212121',
+          chatEnabled: args.chatEnabled !== false
         }
 
         await WIKI.configSvc.saveToDb(['theming'])

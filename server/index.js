@@ -21,6 +21,7 @@ let WIKI = {
   Error: require('./helpers/error'),
   configSvc: require('./core/config'),
   kernel: require('./core/kernel'),
+  webhooks: require('./core/webhooks'),
   startedAt: DateTime.utc()
 }
 global.WIKI = WIKI

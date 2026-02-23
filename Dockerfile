@@ -46,9 +46,7 @@ RUN yarn --production --frozen-lockfile --non-interactive
 
 COPY --from=assets /wiki/assets ./assets
 COPY server ./server
-COPY server/views ./server/views
 COPY config.sample.yml ./
-COPY wiki.js ./
 
 USER node
 

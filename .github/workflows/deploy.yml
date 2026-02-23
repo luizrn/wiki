@@ -1,0 +1,15 @@
+name: Deploy to EasyPanel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger EasyPanel Deploy
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            http://98.80.5.32:3000/api/deploy/6b63f2efe01cd09722e6403f58c1eb516e4fc4a30dd14a1d

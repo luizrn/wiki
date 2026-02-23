@@ -1,5 +1,7 @@
 const fs = require('fs');
 
+const dbSsl = process.env.DB_SSL === 'true' ? '\n    rejectUnauthorized: false' : 'false';
+
 const config = `port: 3000
 bindIP: 0.0.0.0
 db:
@@ -8,8 +10,8 @@ db:
   port: ${process.env.DB_PORT || 5432}
   user: '${process.env.DB_USER}'
   pass: '${process.env.DB_PASS}'
-  db: ${process.env.DB_NAME}
-  ssl: ${process.env.DB_SSL === 'true'}
+  db: ${process.env.DB_NAME || 'postgres'}
+  ssl: ${dbSsl}
 `;
 
 try {

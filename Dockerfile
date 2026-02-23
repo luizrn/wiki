@@ -49,6 +49,7 @@ RUN yarn --production --frozen-lockfile --non-interactive && \
 COPY --from=assets /wiki/assets ./assets
 COPY server ./server
 COPY config.sample.yml ./
+RUN cp config.sample.yml config.yml
 
 USER node
 

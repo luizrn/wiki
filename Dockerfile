@@ -48,11 +48,24 @@ RUN yarn --production --frozen-lockfile --non-interactive && \
 
 COPY --from=assets /wiki/assets ./assets
 COPY server ./server
-COPY config.sample.yml ./
-RUN cp config.sample.yml config.yml
-
+# We will inject the configuration dynamically using a Node script at start
 USER node
 
 EXPOSE 3000
 
-CMD ["node", "server"]
+CMD node -e "\
+const fs = require('fs');\n\
+const config = \`port: 3000\n\
+bindIP: 0.0.0.0\n\
+db:\n\
+  type: \${process.env.DB_TYPE || 'postgres'}\n\
+  host: \${process.env.DB_HOST || 'db'}\n\
+  port: \${process.env.DB_PORT || 5432}\n\
+  user: '\${process.env.DB_USER}'\n\
+  pass: '\${process.env.DB_PASS}'\n\
+  db: \${process.env.DB_NAME}\n\
+  ssl: \${process.env.DB_SSL === 'true'}\n\
+\`;\n\
+fs.writeFileSync('config.yml', config);\n\
+console.log('--- EasyPanel config.yml created ---');\n\
+" && node server

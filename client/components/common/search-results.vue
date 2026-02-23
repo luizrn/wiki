@@ -1,6 +1,9 @@
 <template lang="pug">
   .search-results(v-if='searchIsFocused || (search && search.length > 1)')
     .search-results-container
+      .text-xs-left.white--text.mb-3(v-if='search && search.length > 1')
+        v-checkbox.d-inline-flex.mr-4(v-model='filterPermissions', label='Permissões', dark, hide-details, color='orange')
+        v-checkbox.d-inline-flex(v-model='filterPages', label='Processos e serviços', dark, hide-details, color='blue')
       .search-results-help(v-if='!search || (search && search.length < 2)')
         img(src='/_assets/svg/icon-search-alt.svg')
         .mt-4 {{$t('common:header.searchHint')}}
@@ -74,7 +77,9 @@ export default {
         results: [],
         suggestions: [],
         totalHits: 0
-      }
+      },
+      filterPermissions: true,
+      filterPages: true
     }
   },
   computed: {
@@ -136,10 +141,18 @@ export default {
       this.search = term
     },
     goToPage(item) {
-      window.location.assign(`/${item.locale}/${item.path}`)
+      if (_.startsWith(item.id, 'tbdc-') || _.startsWith(item.path, 'a/')) {
+        window.location.assign(`/${item.path}`)
+      } else {
+        window.location.assign(`/${item.locale}/${item.path}`)
+      }
     },
     goToPageInNewTab(item) {
-      window.open(`/${item.locale}/${item.path}`, '_blank')
+      if (_.startsWith(item.id, 'tbdc-') || _.startsWith(item.path, 'a/')) {
+        window.open(`/${item.path}`, '_blank')
+      } else {
+        window.open(`/${item.locale}/${item.path}`, '_blank')
+      }
     }
   },
   apollo: {
@@ -147,7 +160,9 @@ export default {
       query: searchPagesQuery,
       variables() {
         return {
-          query: this.search
+          query: this.search,
+          filterPermissions: this.filterPermissions,
+          filterPages: this.filterPages
         }
       },
       fetchPolicy: 'network-only',

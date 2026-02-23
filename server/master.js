@@ -20,6 +20,7 @@ module.exports = async () => {
   WIKI.auth = require('./core/auth').init()
   WIKI.lang = require('./core/localization').init()
   WIKI.mail = require('./core/mail').init()
+  WIKI.pageNotifications = require('./core/page-notifications').init()
   WIKI.system = require('./core/system').init()
   WIKI.webhooks.init()
 
@@ -82,7 +83,8 @@ module.exports = async () => {
     resave: false,
     saveUninitialized: false,
     store: new KnexSessionStore({
-      knex: WIKI.models.knex
+      knex: WIKI.models.knex,
+      clearInterval: WIKI.config.sessionClearInterval || 600000
     })
   }))
   app.use(WIKI.auth.passport.initialize())

@@ -8,6 +8,19 @@ const _ = require('lodash')
 
 const OAuth2Strategy = require('passport-oauth2').Strategy
 
+function normalizeString(value, fallback = '') {
+  if (_.isNil(value)) {
+    return fallback
+  }
+  if (_.isArray(value)) {
+    return _.toString(_.first(value) || fallback)
+  }
+  if (_.isObject(value)) {
+    return _.toString(value.value || value.id || fallback)
+  }
+  return _.toString(value)
+}
+
 module.exports = {
   init (passport, conf) {
     var client = new OAuth2Strategy({
@@ -22,14 +35,18 @@ module.exports = {
       state: conf.enableCSRFProtection
     }, async (req, accessToken, refreshToken, profile, cb) => {
       try {
-        const picture = _.get(profile, conf.pictureClaim, '')
+        const picture = normalizeString(_.get(profile, conf.pictureClaim, ''), '')
+        const userId = normalizeString(_.get(profile, conf.userIdClaim), '')
+        const displayName = normalizeString(_.get(profile, conf.displayNameClaim, '???'), '???')
+        const email = normalizeString(_.get(profile, conf.emailClaim), '')
+
         const user = await WIKI.models.users.processProfile({
           providerKey: req.params.strategy,
           profile: {
             ...profile,
-            id: _.get(profile, conf.userIdClaim),
-            displayName: _.get(profile, conf.displayNameClaim, '???'),
-            email: _.get(profile, conf.emailClaim),
+            id: userId,
+            displayName,
+            email,
             picture: picture
           }
         })

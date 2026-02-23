@@ -64,6 +64,9 @@ module.exports = class UserKey extends Model {
       if (DateTime.utc() > DateTime.fromISO(res.validUntil)) {
         throw new WIKI.Error.AuthValidationTokenInvalid()
       }
+      if (res.user && !res.user.isActive) {
+        throw new WIKI.Error.AuthUserDisabled()
+      }
       return res.user
     } else {
       throw new WIKI.Error.AuthValidationTokenInvalid()

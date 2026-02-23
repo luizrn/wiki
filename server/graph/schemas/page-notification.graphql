@@ -1,0 +1,87 @@
+# ===============================================
+# PAGE NOTIFICATIONS
+# ===============================================
+
+extend type Query {
+  pageNotifications: PageNotificationQuery
+}
+
+extend type Mutation {
+  pageNotifications: PageNotificationMutation
+}
+
+type PageNotificationQuery {
+  config: PageNotificationConfig @auth(requires: ["manage:system"])
+  myPreferences: PageNotificationUserPrefs
+  myInbox(
+    limit: Int
+    offset: Int
+    unreadOnly: Boolean
+  ): [PageNotificationInboxItem]
+  myUnreadCount: Int
+}
+
+type PageNotificationMutation {
+  updateConfig(
+    isEnabled: Boolean!
+    channelInApp: Boolean!
+    channelEmail: Boolean!
+    channelDiscord: Boolean!
+    eventPageCreated: Boolean!
+    eventPageUpdated: Boolean!
+    discordWebhookUrl: String
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  sendDiscordTest(
+    message: String
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  sendEmailTest(
+    recipientEmail: String!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  updateMyPreferences(
+    inAppEnabled: Boolean!
+    emailEnabled: Boolean!
+    discordEnabled: Boolean!
+  ): DefaultResponse
+
+  markRead(
+    inboxId: Int!
+  ): DefaultResponse
+
+  markAllRead: DefaultResponse
+}
+
+type PageNotificationConfig {
+  id: Int!
+  isEnabled: Boolean!
+  channelInApp: Boolean!
+  channelEmail: Boolean!
+  channelDiscord: Boolean!
+  eventPageCreated: Boolean!
+  eventPageUpdated: Boolean!
+  discordWebhookUrl: String
+}
+
+type PageNotificationUserPrefs {
+  id: Int!
+  userId: Int!
+  inAppEnabled: Boolean!
+  emailEnabled: Boolean!
+  discordEnabled: Boolean!
+}
+
+type PageNotificationInboxItem {
+  id: Int!
+  isRead: Boolean!
+  readAt: Date
+  createdAt: Date!
+  eventType: String!
+  localeCode: String!
+  path: String!
+  title: String!
+  actorName: String
+  pageDate: Date!
+  url: String!
+}

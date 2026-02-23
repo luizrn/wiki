@@ -28,6 +28,7 @@ defaults:
     offline: false
     ha: false
     bodyParserLimit: 5mb
+    sessionClearInterval: 600000
     # DB defaults
     api:
       isEnabled: false

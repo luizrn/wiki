@@ -173,8 +173,14 @@ module.exports = class Asset extends Model {
       const cachePath = path.resolve(WIKI.ROOTPATH, WIKI.config.dataPath, `cache/${fileHash}.dat`)
 
       // Force unsafe extensions to download
-      if (WIKI.config.uploads.forceDownload && !['.png', '.apng', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'].includes(fileInfo.ext)) {
+      if (WIKI.config.uploads.forceDownload && !['.png', '.apng', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg', '.pdf'].includes(fileInfo.ext)) {
         res.set('Content-disposition', 'attachment; filename=' + encodeURIComponent(fileInfo.base))
+      }
+
+      // Security Headers
+      res.set('X-Content-Type-Options', 'nosniff')
+      if (['.svg', '.pdf', '.html', '.htm'].includes(fileInfo.ext)) {
+        res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none';")
       }
 
       if (await WIKI.models.assets.getAssetFromCache(assetPath, cachePath, res)) {
@@ -200,7 +206,7 @@ module.exports = class Asset extends Model {
       return false
     }
     const sendFile = Promise.promisify(res.sendFile, {context: res})
-    res.type(path.extname(assetPath))
+    res.type(path.extname(assetPath) || 'application/octet-stream')
     await sendFile(cachePath, { dotfiles: 'deny' })
     return true
   }

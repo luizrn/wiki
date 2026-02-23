@@ -323,6 +323,32 @@
                 v-switch(v-model='user.chatEnabled', color='primary')
 
         v-card.mt-3.animated.fadeInUp.wait-p3s
+          v-toolbar(color='indigo', dark, dense, flat)
+            v-toolbar-title
+              .subtitle-1 Notificações de Artigos
+          .pa-4
+            v-switch(
+              v-model='notificationPrefs.inAppEnabled'
+              color='indigo'
+              inset
+              label='Sininho da Wiki'
+              )
+            v-switch(
+              v-model='notificationPrefs.emailEnabled'
+              color='indigo'
+              inset
+              label='Email'
+              )
+            v-switch(
+              v-model='notificationPrefs.discordEnabled'
+              color='indigo'
+              inset
+              label='Discord'
+              )
+            .caption.grey--text
+              | Você pode desativar os canais apenas para sua conta.
+
+        v-card.mt-3.animated.fadeInUp.wait-p3s
           v-toolbar(color='primary', dark, dense, flat)
             v-toolbar-title
               .subtitle-1 {{$t('profile:groups.title')}}
@@ -387,6 +413,11 @@ export default {
         updatedAt: '1970-01-01',
         lastLoginAt: '1970-01-01',
         groups: []
+      },
+      notificationPrefs: {
+        inAppEnabled: true,
+        emailEnabled: true,
+        discordEnabled: true
       },
       currentPass: '',
       newPass: '',
@@ -768,6 +799,30 @@ export default {
         })
         const resp = _.get(respRaw, 'data.users.updateProfile.responseResult', {})
         if (resp.succeeded) {
+          const prefRespRaw = await this.$apollo.mutate({
+            mutation: gql`
+              mutation ($inAppEnabled: Boolean!, $emailEnabled: Boolean!, $discordEnabled: Boolean!) {
+                pageNotifications {
+                  updateMyPreferences(inAppEnabled: $inAppEnabled, emailEnabled: $emailEnabled, discordEnabled: $discordEnabled) {
+                    responseResult {
+                      succeeded
+                      message
+                    }
+                  }
+                }
+              }
+            `,
+            variables: {
+              inAppEnabled: this.notificationPrefs.inAppEnabled,
+              emailEnabled: this.notificationPrefs.emailEnabled,
+              discordEnabled: this.notificationPrefs.discordEnabled
+            }
+          })
+          const prefResp = _.get(prefRespRaw, 'data.pageNotifications.updateMyPreferences.responseResult', {})
+          if (!prefResp.succeeded) {
+            throw new Error(prefResp.message || 'Falha ao salvar preferências de notificação.')
+          }
+
           Cookies.set('jwt', _.get(respRaw, 'data.users.updateProfile.jwt', ''), { expires: 365, secure: window.location.protocol === 'https:' })
           this.$store.set('user/name', this.user.name)
           this.$store.commit('showNotification', {
@@ -895,6 +950,21 @@ export default {
     }
   },
   apollo: {
+    notificationPrefs: {
+      query: gql`
+        {
+          pageNotifications {
+            myPreferences {
+              inAppEnabled
+              emailEnabled
+              discordEnabled
+            }
+          }
+        }
+      `,
+      fetchPolicy: 'network-only',
+      update: data => _.cloneDeep(data.pageNotifications.myPreferences)
+    },
     user: {
       query: gql`
         {

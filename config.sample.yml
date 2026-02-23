@@ -145,3 +145,10 @@ dataPath: ./data
 # file uploads.
 
 bodyParserLimit: 5mb
+
+# ---------------------------------------------------------------------
+# Session Store Clear Interval (in ms)
+# ---------------------------------------------------------------------
+# How often expired sessions should be cleaned from the DB.
+
+sessionClearInterval: 600000

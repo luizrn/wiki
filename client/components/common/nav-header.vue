@@ -190,11 +190,57 @@
 
           //- ACCOUNT
 
+          v-tooltip(bottom, v-if='isAuthenticated && isAdmin')
+            template(v-slot:activator='{ on }')
+              v-btn(icon, tile, height='64', v-on='on', href='/a/tbdc-companies', aria-label='Permissões TBDC')
+                v-icon(color='grey') mdi-shield-account
+            span Permissões TBDC
+
           v-tooltip(bottom, v-if='isAuthenticated')
             template(v-slot:activator='{ on }')
               v-btn(icon, tile, height='64', v-on='on', href='/boards', :aria-label='`Boards`')
                 v-icon(color='grey') mdi-view-kanban
             span Boards
+
+          v-menu(v-if='isAuthenticated', v-model='notificationsMenu', offset-y, bottom, min-width='340', max-width='420', transition='slide-y-transition', left)
+            template(v-slot:activator='{ on: menu, attrs }')
+              v-tooltip(bottom)
+                template(v-slot:activator='{ on: tooltip }')
+                  v-btn(
+                    icon
+                    v-bind='attrs'
+                    v-on='{ ...menu, ...tooltip }'
+                    tile
+                    height='64'
+                    aria-label='Notificações'
+                    @click='refreshNotifications'
+                    )
+                    v-badge(:content='unreadCount', :value='unreadCount > 0', color='red', overlap)
+                      v-icon(color='grey') mdi-bell-outline
+                span Notificações
+            v-list(nav, dense)
+              v-list-item.py-2.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
+                v-list-item-content
+                  v-list-item-title Notificações de Artigos
+                  v-list-item-subtitle(v-if='unreadCount > 0') {{unreadCount}} não lidas
+              v-list-item(@click='markAllNotificationsRead', :disabled='unreadCount < 1')
+                v-list-item-action: v-icon(color='primary') mdi-check-all
+                v-list-item-title Marcar todas como lidas
+              v-divider
+              template(v-if='notifications.length > 0')
+                template(v-for='item in notifications')
+                  v-list-item(@click='openNotification(item)', :key='`ntf-` + item.id')
+                    v-list-item-action
+                      v-icon(
+                        :color='item.isRead ? `grey` : `primary`'
+                        v-text='item.eventType === `created` ? `mdi-new-box` : `mdi-file-refresh-outline`'
+                        )
+                    v-list-item-content
+                      v-list-item-title(:class='item.isRead ? `` : `font-weight-bold`') {{item.title}}
+                      v-list-item-subtitle {{item.eventType === 'created' ? 'Novo artigo' : 'Artigo atualizado'}} • {{item.localeCode}}/{{item.path}}
+              v-list-item(v-else)
+                v-list-item-content
+                  v-list-item-title Nenhuma notificação.
 
           v-menu(v-if='isAuthenticated', offset-y, bottom, min-width='300', transition='slide-y-transition', left)
             template(v-slot:activator='{ on: menu, attrs }')
@@ -258,6 +304,7 @@
 <script>
 import { get, sync } from 'vuex-pathify'
 import _ from 'lodash'
+import gql from 'graphql-tag'
 
 import movePageMutation from 'gql/common/common-pages-mutation-move.gql'
 
@@ -293,7 +340,10 @@ export default {
         locale: 'en',
         path: 'new-page',
         modal: false
-      }
+      },
+      notificationsMenu: false,
+      unreadCount: 0,
+      notifications: []
     }
   },
   computed: {
@@ -482,12 +532,114 @@ export default {
     logout () {
       window.location.assign('/logout')
     },
+    async refreshNotifications () {
+      if (!this.isAuthenticated || !this.$apollo.queries.notifications) {
+        return
+      }
+      try {
+        await Promise.all([
+          this.$apollo.queries.notifications.refetch(),
+          this.$apollo.queries.unreadCount.refetch()
+        ])
+      } catch (err) {}
+    },
+    async markAllNotificationsRead () {
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`
+            mutation {
+              pageNotifications {
+                markAllRead {
+                  responseResult {
+                    succeeded
+                  }
+                }
+              }
+            }
+          `
+        })
+        if (_.get(resp, 'data.pageNotifications.markAllRead.responseResult.succeeded', false)) {
+          this.refreshNotifications()
+        }
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    async openNotification (item) {
+      try {
+        if (!item.isRead) {
+          await this.$apollo.mutate({
+            mutation: gql`
+              mutation ($inboxId: Int!) {
+                pageNotifications {
+                  markRead(inboxId: $inboxId) {
+                    responseResult {
+                      succeeded
+                    }
+                  }
+                }
+              }
+            `,
+            variables: {
+              inboxId: item.id
+            }
+          })
+        }
+      } catch (err) {}
+      window.location.assign(item.url)
+    },
     goHome () {
       if (this.locales && this.locales.length > 0) {
         window.location.assign(`/${this.locale}/home`)
       } else {
         window.location.assign('/')
       }
+    }
+  },
+  apollo: {
+    unreadCount: {
+      query: gql`
+        {
+          pageNotifications {
+            myUnreadCount
+          }
+        }
+      `,
+      skip () {
+        return !this.isAuthenticated
+      },
+      pollInterval: 30000,
+      fetchPolicy: 'network-only',
+      update: data => _.get(data, 'pageNotifications.myUnreadCount', 0)
+    },
+    notifications: {
+      query: gql`
+        query ($limit: Int!) {
+          pageNotifications {
+            myInbox(limit: $limit) {
+              id
+              isRead
+              eventType
+              localeCode
+              path
+              title
+              url
+              createdAt
+            }
+          }
+        }
+      `,
+      skip () {
+        return !this.isAuthenticated
+      },
+      variables () {
+        return {
+          limit: 10
+        }
+      },
+      pollInterval: 30000,
+      fetchPolicy: 'network-only',
+      update: data => _.get(data, 'pageNotifications.myInbox', [])
     }
   }
 }

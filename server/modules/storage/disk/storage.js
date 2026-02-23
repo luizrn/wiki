@@ -50,7 +50,7 @@ module.exports = {
     if (WIKI.config.lang.code !== page.localeCode) {
       fileName = `${page.localeCode}/${fileName}`
     }
-    const filePath = path.join(this.config.path, fileName)
+    const filePath = this.safePathJoin(this.config.path, fileName)
     await fs.outputFile(filePath, page.injectMetadata(), 'utf8')
   },
   async updated(page) {
@@ -59,7 +59,7 @@ module.exports = {
     if (WIKI.config.lang.code !== page.localeCode) {
       fileName = `${page.localeCode}/${fileName}`
     }
-    const filePath = path.join(this.config.path, fileName)
+    const filePath = this.safePathJoin(this.config.path, fileName)
     await fs.outputFile(filePath, page.injectMetadata(), 'utf8')
   },
   async deleted(page) {
@@ -68,7 +68,7 @@ module.exports = {
     if (WIKI.config.lang.code !== page.localeCode) {
       fileName = `${page.localeCode}/${fileName}`
     }
-    const filePath = path.join(this.config.path, fileName)
+    const filePath = this.safePathJoin(this.config.path, fileName)
     await fs.unlink(filePath)
   },
   async renamed(page) {
@@ -86,7 +86,7 @@ module.exports = {
       }
     }
 
-    await fs.move(path.join(this.config.path, sourceFilePath), path.join(this.config.path, destinationFilePath), { overwrite: true })
+    await fs.move(this.safePathJoin(this.config.path, sourceFilePath), this.safePathJoin(this.config.path, destinationFilePath), { overwrite: true })
   },
   /**
    * ASSET UPLOAD
@@ -95,7 +95,7 @@ module.exports = {
    */
   async assetUploaded (asset) {
     WIKI.logger.info(`(STORAGE/DISK) Creating new file ${asset.path}...`)
-    await fs.outputFile(path.join(this.config.path, asset.path), asset.data)
+    await fs.outputFile(this.safePathJoin(this.config.path, asset.path), asset.data)
   },
   /**
    * ASSET DELETE
@@ -104,7 +104,7 @@ module.exports = {
    */
   async assetDeleted (asset) {
     WIKI.logger.info(`(STORAGE/DISK) Deleting file ${asset.path}...`)
-    await fs.remove(path.join(this.config.path, asset.path))
+    await fs.remove(this.safePathJoin(this.config.path, asset.path))
   },
   /**
    * ASSET RENAME
@@ -113,10 +113,20 @@ module.exports = {
    */
   async assetRenamed (asset) {
     WIKI.logger.info(`(STORAGE/DISK) Renaming file from ${asset.path} to ${asset.destinationPath}...`)
-    await fs.move(path.join(this.config.path, asset.path), path.join(this.config.path, asset.destinationPath), { overwrite: true })
+    await fs.move(this.safePathJoin(this.config.path, asset.path), this.safePathJoin(this.config.path, asset.destinationPath), { overwrite: true })
+  },
+  /**
+   * Helper to ensure path is within the storage root
+   */
+  safePathJoin (base, ...parts) {
+    const res = path.resolve(base, ...parts)
+    if (!res.startsWith(path.resolve(base))) {
+      throw new Error('Directory traversal attempt detected!')
+    }
+    return res
   },
   async getLocalLocation (asset) {
-    return path.join(this.config.path, asset.path)
+    return this.safePathJoin(this.config.path, asset.path)
   },
   /**
    * HANDLERS
@@ -140,7 +150,7 @@ module.exports = {
             fileName = `${page.localeCode}/${fileName}`
           }
           WIKI.logger.info(`(STORAGE/DISK) Dumping page ${fileName}...`)
-          const filePath = path.join(this.config.path, fileName)
+          const filePath = this.safePathJoin(this.config.path, fileName)
           await fs.outputFile(filePath, pageHelper.injectPageMetadata(page), 'utf8')
           cb()
         }
@@ -157,7 +167,7 @@ module.exports = {
         transform: async (asset, enc, cb) => {
           const filename = (asset.folderId && asset.folderId > 0) ? `${_.get(assetFolders, asset.folderId)}/${asset.filename}` : asset.filename
           WIKI.logger.info(`(STORAGE/DISK) Dumping asset ${filename}...`)
-          await fs.outputFile(path.join(this.config.path, filename), asset.data)
+          await fs.outputFile(this.safePathJoin(this.config.path, filename), asset.data)
           cb()
         }
       })

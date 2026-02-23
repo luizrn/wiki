@@ -141,6 +141,13 @@ export default {
               warning: false,
               restrictedForSystem: true,
               disabled: false
+            },
+            {
+              permission: 'write:tags',
+              hint: 'Can edit and delete tags globally',
+              warning: false,
+              restrictedForSystem: true,
+              disabled: false
             }
           ]
         },

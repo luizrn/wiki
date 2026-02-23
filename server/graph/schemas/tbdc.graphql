@@ -1,0 +1,115 @@
+# ===============================================
+# TBDC PERMISSIONS SYSTEM
+# ===============================================
+
+type TBDCStaff {
+  id: Int!
+  name: String!
+  email: String!
+  role: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type TBDCCompany {
+  id: Int!
+  name: String!
+  focalName: String
+  focalEmail: String
+  focalPhone: String
+  csId: Int
+  implantadorId: Int
+  cs: TBDCStaff
+  implantador: TBDCStaff
+  isActive: Boolean!
+  permissions: [TBDCPermission]
+  createdAt: String!
+  updatedAt: String!
+}
+
+type TBDCProduct {
+  id: Int!
+  name: String!
+  modules: [TBDCModule]
+  createdAt: String!
+  updatedAt: String!
+}
+
+type TBDCModule {
+  id: Int!
+  name: String!
+  productId: Int!
+  product: TBDCProduct
+  createdAt: String!
+  updatedAt: String!
+}
+
+type TBDCPermission {
+  id: Int!
+  companyId: Int!
+  moduleId: Int!
+  ruleName: String!
+  level: String!
+  description: String
+  isActive: Boolean!
+  module: TBDCModule
+  createdAt: String!
+  updatedAt: String!
+}
+
+input TBDCPermissionInput {
+  id: Int
+  moduleId: Int!
+  ruleName: String!
+  level: String!
+  description: String
+  isActive: Boolean
+}
+
+# -----------------------------------------------
+# QUERIES
+# -----------------------------------------------
+
+extend type Query {
+  tbdc: TBDCQuery
+}
+
+type TBDCQuery {
+  companies: [TBDCCompany] @auth(requires: ["manage:system"])
+  company(id: Int!): TBDCCompany @auth(requires: ["manage:system"])
+  products: [TBDCProduct] @auth(requires: ["manage:system"])
+  staff: [TBDCStaff] @auth(requires: ["manage:system"])
+}
+
+# -----------------------------------------------
+# MUTATIONS
+# -----------------------------------------------
+
+extend type Mutation {
+  tbdc: TBDCMutation
+}
+
+type TBDCMutation {
+  saveCompany(
+    id: Int
+    name: String!
+    focalName: String
+    focalEmail: String
+    focalPhone: String
+    csId: Int
+    implantadorId: Int
+    isActive: Boolean
+    permissions: [TBDCPermissionInput]
+  ): TBDCCompany @auth(requires: ["manage:system"])
+
+  deleteCompany(id: Int!): Boolean @auth(requires: ["manage:system"])
+
+  saveProduct(id: Int, name: String!): TBDCProduct @auth(requires: ["manage:system"])
+  deleteProduct(id: Int!): Boolean @auth(requires: ["manage:system"])
+
+  saveModule(id: Int, productId: Int!, name: String!): TBDCModule @auth(requires: ["manage:system"])
+  deleteModule(id: Int!): Boolean @auth(requires: ["manage:system"])
+
+  saveStaff(id: Int, name: String!, email: String!, role: String!): TBDCStaff @auth(requires: ["manage:system"])
+  deleteStaff(id: Int!): Boolean @auth(requires: ["manage:system"])
+}

@@ -71,6 +71,9 @@
             v-list-item(to='/search', color='primary')
               v-list-item-avatar(size='24', tile): v-icon mdi-cloud-search-outline
               v-list-item-title {{ $t('admin:search.title') }}
+            v-list-item(to='/notifications', color='primary')
+              v-list-item-avatar(size='24', tile): v-icon mdi-bell-ring-outline
+              v-list-item-title Notificações
             v-list-item(to='/storage', color='primary')
               v-list-item-avatar(size='24', tile): v-icon mdi-harddisk
               v-list-item-title {{ $t('admin:storage.title') }}
@@ -101,6 +104,9 @@
             v-list-item(to='/public-links', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-link-variant
               v-list-item-title Links Públicos
+            v-list-item(to='/tbdc-companies', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-shield-account
+              v-list-item-title Permissões TBDC
             v-list-group(
               to='/dev'
               no-action
@@ -171,6 +177,7 @@ const router = new VueRouter({
     { path: '/extensions', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-extensions.vue') },
     { path: '/logging', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-logging.vue') },
     { path: '/search', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-search.vue') },
+    { path: '/notifications', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-notifications.vue') },
     { path: '/storage', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-storage.vue') },
     { path: '/api', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-api.vue') },
     { path: '/mail', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-mail.vue') },
@@ -180,6 +187,10 @@ const router = new VueRouter({
     { path: '/utilities', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-utilities.vue') },
     { path: '/webhooks', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-webhooks.vue') },
     { path: '/public-links', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-public-links.vue') },
+    { path: '/tbdc-companies', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies.vue') },
+    { path: '/tbdc-companies/new', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
+    { path: '/tbdc-companies/:id(\\d+)', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
+    { path: '/tbdc-master', component: () => import(/* webpackChunkName: "admin" */ './admin/tbdc/admin-tbdc-master.vue') },
     { path: '/dev-flags', component: () => import(/* webpackChunkName: "admin-dev" */ './admin/admin-dev-flags.vue') },
     { path: '/contribute', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-contribute.vue') }
   ]

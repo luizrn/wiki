@@ -48,11 +48,19 @@ module.exports = {
       if (page) {
         if (WIKI.auth.checkAccess(context.req.user, ['read:comments'], { tags: page.tags, ...args })) {
           const comments = await WIKI.models.comments.query().where('pageId', page.id).orderBy('createdAt')
+          const authorIds = _.uniq(comments.map(c => c.authorId).filter(id => _.isSafeInteger(id) && id > 0))
+          let pictureByUserId = {}
+          if (authorIds.length > 0) {
+            const users = await WIKI.models.users.query().select('id', 'pictureUrl').whereIn('id', authorIds)
+            pictureByUserId = _.keyBy(users, 'id')
+          }
+
           return comments.map(c => ({
             ...c,
             authorName: c.name,
             authorEmail: c.email,
-            authorIP: c.ip
+            authorIP: c.ip,
+            pictureUrl: _.get(pictureByUserId, [c.authorId, 'pictureUrl'], null)
           }))
         } else {
           throw new WIKI.Error.CommentViewForbidden()
@@ -80,11 +88,17 @@ module.exports = {
           locale: page.localeCode,
           tags: page.tags
         })) {
+          let pictureUrl = null
+          if (_.isSafeInteger(cm.authorId) && cm.authorId > 0) {
+            const author = await WIKI.models.users.query().findById(cm.authorId).select('pictureUrl')
+            pictureUrl = _.get(author, 'pictureUrl', null)
+          }
           return {
             ...cm,
             authorName: cm.name,
             authorEmail: cm.email,
-            authorIP: cm.ip
+            authorIP: cm.ip,
+            pictureUrl
           }
         } else {
           throw new WIKI.Error.CommentViewForbidden()

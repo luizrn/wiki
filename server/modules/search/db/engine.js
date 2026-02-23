@@ -91,57 +91,99 @@ module.exports = {
       scoreParams.push(termLike)
     }
 
-    const results = await WIKI.models.pages.query()
-      .column('pages.id', 'title', 'description', 'path', 'localeCode as locale')
-      .where(builder => {
-        builder.where('isPublished', true)
-        if (opts.locale) {
-          builder.andWhere('localeCode', opts.locale)
-        }
-        if (opts.path) {
-          builder.andWhere('path', 'like', `${opts.path}%`)
-        }
-        builder.andWhere(builderSub => {
-          addTermMatcher(builderSub, queryLike)
-        })
-        if (termLikes.length > 1) {
-          for (const termLike of termLikes) {
-            builder.andWhere(builderSub => {
-              addTermMatcher(builderSub, termLike)
-            })
+    let results = []
+
+    // -> Search Pages
+    if (opts.filterPages !== false) {
+      results = await WIKI.models.pages.query()
+        .column('pages.id', 'title', 'description', 'path', 'localeCode as locale')
+        .where(builder => {
+          builder.where('isPublished', true)
+          if (opts.locale) {
+            builder.andWhere('localeCode', opts.locale)
           }
-        }
-      })
-      .orderByRaw(`(${scoreExpr.join(' + ')}) DESC`, scoreParams)
-      .orderBy('title', 'asc')
-      .limit(maxHits)
+          if (opts.path) {
+            builder.andWhere('path', 'like', `${opts.path}%`)
+          }
+          builder.andWhere(builderSub => {
+            addTermMatcher(builderSub, queryLike)
+          })
+          if (termLikes.length > 1) {
+            for (const termLike of termLikes) {
+              builder.andWhere(builderSub => {
+                addTermMatcher(builderSub, termLike)
+              })
+            }
+          }
+        })
+        .orderByRaw(`(${scoreExpr.join(' + ')}) DESC`, scoreParams)
+        .orderBy('title', 'asc')
+        .limit(maxHits)
+    }
+
+    // -> Search TBDC Permissions
+    if (opts.filterPermissions !== false) {
+      const tbdcResults = await WIKI.models.knex('tbdc_permissions')
+        .join('tbdc_companies', 'tbdc_permissions.companyId', 'tbdc_companies.id')
+        .join('tbdc_modules', 'tbdc_permissions.moduleId', 'tbdc_modules.id')
+        .select(
+          WIKI.models.knex.raw("'tbdc-' || tbdc_permissions.id as id"),
+          WIKI.models.knex.raw("tbdc_permissions.ruleName || ' - ' || tbdc_companies.name || ' (' || tbdc_modules.name || ')' as title"),
+          WIKI.models.knex.raw("tbdc_permissions.description as description"),
+          WIKI.models.knex.raw("'a/tbdc-companies/' || tbdc_companies.id as path"),
+          WIKI.models.knex.raw("'pt' as locale")
+        )
+        .where(builder => {
+          builder.where('tbdc_permissions.isActive', true)
+          builder.andWhere(builderSub => {
+            builderSub.where('tbdc_companies.name', 'LIKE', queryLike)
+              .orWhere('tbdc_modules.name', 'LIKE', queryLike)
+              .orWhere('tbdc_permissions.ruleName', 'LIKE', queryLike)
+              .orWhere('tbdc_permissions.description', 'LIKE', queryLike)
+          })
+        })
+        .limit(maxHits)
+
+      results = _.concat(results, tbdcResults)
+    }
 
     if (results.length > 0) {
-      const pageIds = results.map(r => r.id)
-      const tagsRaw = await WIKI.models.knex('pageTags')
-        .leftJoin('tags', 'tags.id', 'pageTags.tagId')
-        .select('pageTags.pageId as pageId', 'tags.tag as tag')
-        .whereIn('pageTags.pageId', pageIds)
+      const pageIds = results.filter(r => !_.startsWith(r.id, 'tbdc-')).map(r => r.id)
+      if (pageIds.length > 0) {
+        const tagsRaw = await WIKI.models.knex('pageTags')
+          .leftJoin('tags', 'tags.id', 'pageTags.tagId')
+          .select('pageTags.pageId as pageId', 'tags.tag as tag')
+          .whereIn('pageTags.pageId', pageIds)
 
-      const tagsByPageId = new Map()
-      for (const row of tagsRaw) {
-        if (!tagsByPageId.has(row.pageId)) {
-          tagsByPageId.set(row.pageId, [])
+        const tagsByPageId = new Map()
+        for (const row of tagsRaw) {
+          if (!tagsByPageId.has(row.pageId)) {
+            tagsByPageId.set(row.pageId, [])
+          }
+          tagsByPageId.get(row.pageId).push({ tag: row.tag })
         }
-        tagsByPageId.get(row.pageId).push({ tag: row.tag })
-      }
 
-      for (const row of results) {
-        row.tags = tagsByPageId.get(row.id) || []
+        for (const row of results) {
+          if (!_.startsWith(row.id, 'tbdc-')) {
+            row.tags = tagsByPageId.get(row.id) || []
+          } else {
+            row.tags = []
+          }
+        }
+      } else {
+        for (const row of results) {
+          row.tags = []
+        }
       }
     }
 
     return {
-      results,
+      results: _.take(results, maxHits),
       suggestions: [],
       totalHits: results.length
     }
   },
+
   /**
    * CREATE
    *

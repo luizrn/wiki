@@ -350,6 +350,11 @@ module.exports = class Page extends Model {
 
     // -> Webhook Trigger
     WIKI.webhooks.trigger('page:created', page)
+    WIKI.pageNotifications.triggerPageEvent({
+      eventType: 'created',
+      page,
+      actor: opts.user
+    })
 
     // -> Reconnect Links
     await WIKI.models.pages.reconnectLinks({
@@ -464,6 +469,11 @@ module.exports = class Page extends Model {
 
     // -> Webhook Trigger
     WIKI.webhooks.trigger('page:updated', page)
+    WIKI.pageNotifications.triggerPageEvent({
+      eventType: 'updated',
+      page,
+      actor: opts.user
+    })
 
     // -> Perform move?
     if ((opts.locale && opts.locale !== page.localeCode) || (opts.path && opts.path !== page.path)) {

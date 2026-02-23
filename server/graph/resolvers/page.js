@@ -55,6 +55,9 @@ module.exports = {
         return {
           ...resp,
           results: _.filter(resp.results, r => {
+            if (_.startsWith(r.id, 'tbdc-')) {
+              return true
+            }
             return WIKI.auth.checkAccess(context.req.user, ['read:pages'], {
               path: r.path,
               locale: r.locale,

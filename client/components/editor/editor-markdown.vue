@@ -170,7 +170,10 @@ import _ from 'lodash'
 import { get, sync } from 'vuex-pathify'
 import markdownHelp from './markdown/help.vue'
 import gql from 'graphql-tag'
+import Cookies from 'js-cookie'
 import DOMPurify from 'dompurify'
+import listFolderAssetQuery from 'gql/editor/editor-media-query-folder-list.gql'
+import createAssetFolderMutation from 'gql/editor/editor-media-mutation-folder-create.gql'
 
 /* global siteConfig, siteLangs */
 
@@ -387,7 +390,8 @@ export default {
       previewHTML: '',
       helpShown: false,
       spellModeActive: false,
-      insertLinkDialog: false
+      insertLinkDialog: false,
+      assetFolderCache: {}
     }
   },
   computed: {
@@ -432,22 +436,138 @@ export default {
     onCmInput: _.debounce(function (newContent) {
       this.processContent(newContent)
     }, 600),
-    onCmPaste (cm, ev) {
-      // const clipItems = (ev.clipboardData || ev.originalEvent.clipboardData).items
-      // for (let clipItem of clipItems) {
-      //   if (_.startsWith(clipItem.type, 'image/')) {
-      //     const file = clipItem.getAsFile()
-      //     const reader = new FileReader()
-      //     reader.onload = evt => {
-      //       this.$store.commit(`loadingStart`, 'editor-paste-image')
-      //       this.insertAfter({
-      //         content: `![${file.name}](${evt.target.result})`,
-      //         newLine: true
-      //       })
-      //     }
-      //     reader.readAsDataURL(file)
-      //   }
-      // }
+    async onCmPaste (cm, ev) {
+      const clipItems = _.get(ev, 'clipboardData.items', _.get(ev, 'originalEvent.clipboardData.items', []))
+      // Chromium clears clipboard event payload after this callback returns.
+      const files = Array.from(clipItems)
+        .filter(item => _.startsWith(item.type, 'image/'))
+        .map(item => item.getAsFile())
+        .filter(Boolean)
+
+      if (files.length < 1) {
+        return
+      }
+      ev.preventDefault()
+
+      this.$store.commit('loadingStart', 'editor-paste-image')
+      this.$store.commit('showNotification', {
+        message: this.$t('editor:assets.uploading'),
+        style: 'primary',
+        icon: 'primary'
+      })
+
+      try {
+        const folderInfo = await this.resolvePasteTargetFolder()
+        const jwtToken = Cookies.get('jwt')
+        for (const file of files) {
+          const filename = this.buildPastedFilename(file)
+          const form = new FormData()
+          form.append('mediaUpload', JSON.stringify({ folderId: folderInfo.id }))
+          form.append('mediaUpload', file, filename)
+
+          const resp = await fetch('/u', {
+            method: 'POST',
+            body: form,
+            headers: {
+              'Authorization': `Bearer ${jwtToken}`
+            }
+          })
+
+          if (resp.status !== 200) {
+            throw new Error(`Upload failed: ${resp.status}`)
+          }
+
+          const assetUrl = folderInfo.path === '' ? `/${filename}` : `/${folderInfo.path}/${filename}`
+          this.insertAtCursor({
+            content: `![${filename}](${assetUrl})`
+          })
+        }
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+        this.$store.commit('showNotification', {
+          message: this.$t('editor:assets.uploadFailed'),
+          style: 'error',
+          icon: 'error'
+        })
+      } finally {
+        this.$store.commit('loadingStop', 'editor-paste-image')
+      }
+    },
+    buildPastedFilename (file) {
+      const now = new Date()
+      const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const randomPart = _.random(10000, 99999)
+      const rawExt = _.toLower(_.get(file, 'name', '')).match(/\.[a-z0-9]+$/)
+      const ext = rawExt ? rawExt[0] : '.png'
+      return `${stamp}_${randomPart}${ext}`
+    },
+    async resolvePasteTargetFolder () {
+      const segments = ['assets']
+      if (siteLangs.length > 0 && this.locale) {
+        segments.push(this.normalizeFolderSegment(this.locale))
+      }
+      const pageSegments = _.compact(this.path.split('/').slice(0, -1).map(segment => this.normalizeFolderSegment(segment)))
+      segments.push(...pageSegments)
+
+      const folderPath = _.compact(segments).join('/')
+      const folderId = await this.ensureAssetFolderByPath(folderPath)
+      return {
+        id: folderId,
+        path: folderPath
+      }
+    },
+    normalizeFolderSegment (segment) {
+      return _.toLower(String(segment || ''))
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[()=.!@#$%?&*+`~<>,;:\\/[\]¬{| ]+/g, '')
+    },
+    async ensureAssetFolderByPath (folderPath) {
+      let parentFolderId = 0
+      const segments = _.compact(folderPath.split('/'))
+      for (const segment of segments) {
+        if (!this.assetFolderCache[parentFolderId]) {
+          const folders = await this.getSubFolders(parentFolderId)
+          this.$set(this.assetFolderCache, parentFolderId, folders)
+        }
+
+        let childFolder = this.assetFolderCache[parentFolderId].find(folder => folder.slug === segment)
+        if (!childFolder) {
+          const resp = await this.$apollo.mutate({
+            mutation: createAssetFolderMutation,
+            variables: {
+              parentFolderId,
+              slug: segment
+            }
+          })
+
+          if (!_.get(resp, 'data.assets.createFolder.responseResult.succeeded', false)) {
+            const message = _.get(resp, 'data.assets.createFolder.responseResult.message', 'Failed to create folder.')
+            throw new Error(message)
+          }
+
+          const folders = await this.getSubFolders(parentFolderId)
+          this.$set(this.assetFolderCache, parentFolderId, folders)
+          childFolder = folders.find(folder => folder.slug === segment)
+        }
+
+        if (!childFolder) {
+          throw new Error(`Failed to resolve folder segment: ${segment}`)
+        }
+
+        parentFolderId = childFolder.id
+      }
+      return parentFolderId
+    },
+    async getSubFolders (parentFolderId) {
+      const resp = await this.$apollo.query({
+        query: listFolderAssetQuery,
+        variables: {
+          parentFolderId
+        },
+        fetchPolicy: 'network-only'
+      })
+      return _.get(resp, 'data.assets.folders', [])
     },
     processContent (newContent) {
       linesMap = []

@@ -1,7 +1,7 @@
 # ============================================================
 # Stage 1: Build assets (webpack)
 # ============================================================
-FROM node:18-alpine AS assets
+FROM node:20-alpine AS assets
 
 ENV CYPRESS_INSTALL_BINARY=0
 ENV NODE_OPTIONS=--openssl-legacy-provider
@@ -28,7 +28,7 @@ RUN node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider \
 # ============================================================
 # Stage 2: Production image
 # ============================================================
-FROM node:18-alpine
+FROM node:20-alpine
 
 ENV CYPRESS_INSTALL_BINARY=0
 ENV NODE_ENV=production

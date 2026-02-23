@@ -7,9 +7,9 @@
   "dev": true,
   "scripts": {
     "start": "node server",
-    "dev": "npx cross-env NODE_OPTIONS=--openssl-legacy-provider node dev",
-    "build": "npx cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --profile --config dev/webpack/webpack.prod.js",
-    "watch": "npx cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --config dev/webpack/webpack.dev.js",
+    "dev": "node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider node dev",
+    "build": "npm install --include=dev && node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider node ./node_modules/.bin/webpack --profile --config dev/webpack/webpack.prod.js",
+    "watch": "node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider node ./node_modules/.bin/webpack --config dev/webpack/webpack.dev.js",
     "test": "eslint --format codeframe --ext .js,.vue . && pug-lint server/views && jest",
     "cypress:open": "cypress open",
     "postinstall": "patch-package"

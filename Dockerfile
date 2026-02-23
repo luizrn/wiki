@@ -17,7 +17,8 @@ COPY .eslintrc.yml ./
 COPY patches ./patches
 
 RUN yarn cache clean && \
-    yarn --frozen-lockfile --non-interactive
+    yarn --frozen-lockfile --non-interactive && \
+    yarn cache clean
 
 COPY client ./client
 COPY dev ./dev
@@ -42,7 +43,8 @@ WORKDIR /wiki
 COPY package.json ./
 COPY .npmrc ./
 
-RUN yarn --production --frozen-lockfile --non-interactive
+RUN yarn --production --frozen-lockfile --non-interactive && \
+    yarn cache clean
 
 COPY --from=assets /wiki/assets ./assets
 COPY server ./server

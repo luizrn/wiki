@@ -345,6 +345,11 @@
     "graphql": "15.3.0",
     "passport-saml/**/xml-crypto": "2.1.6"
   },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/dev/cypress/"
+    ]
+  },
   "browserslist": [
     "> 1%",
     "last 2 major versions",

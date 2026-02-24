@@ -40,10 +40,12 @@ RUN apk add --no-cache bash curl git openssh gnupg sqlite && \
 
 WORKDIR /wiki
 
+COPY patches ./patches
 COPY package.json ./
 COPY .npmrc ./
 
 RUN yarn --production --frozen-lockfile --non-interactive && \
+    npx patch-package && \
     yarn cache clean
 
 COPY --from=assets /wiki/assets ./assets

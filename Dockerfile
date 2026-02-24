@@ -30,7 +30,10 @@ RUN node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider \
     node ./node_modules/.bin/webpack --profile --config dev/webpack/webpack.prod.js
 
 # Keep a single dependency install to avoid ENOSPC on constrained builders.
-RUN rm -rf /tmp/.yarn-cache
+# Prune dev dependencies after assets build so final image is lighter.
+RUN npm prune --omit=dev && \
+    yarn cache clean && \
+    rm -rf /tmp/.yarn-cache
 
 # ============================================================
 # Stage 2: Production image

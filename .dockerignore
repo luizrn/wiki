@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage
+tmp
+logs
+data
+dev/cypress/screenshots
+dev/cypress/videos

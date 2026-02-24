@@ -161,11 +161,12 @@ module.exports = {
         .join('tbdc_companies', 'tbdc_permissions.companyId', 'tbdc_companies.id')
         .join('tbdc_modules', 'tbdc_permissions.moduleId', 'tbdc_modules.id')
         .select(
-          WIKI.models.knex.raw("'tbdc-' || tbdc_permissions.id as id"),
-          WIKI.models.knex.raw("tbdc_permissions.ruleName || ' - ' || tbdc_companies.name || ' (' || tbdc_modules.name || ')' as title"),
-          WIKI.models.knex.raw('tbdc_permissions.description as description'),
-          WIKI.models.knex.raw("'a/tbdc-companies/' || tbdc_companies.id as path"),
-          WIKI.models.knex.raw("'pt' as locale")
+          'tbdc_permissions.id as permissionId',
+          'tbdc_permissions.ruleName as ruleName',
+          'tbdc_permissions.description as ruleDescription',
+          'tbdc_companies.id as companyId',
+          'tbdc_companies.name as companyName',
+          'tbdc_modules.name as moduleName'
         )
         .where(builder => {
           builder.where('tbdc_permissions.isActive', true)
@@ -178,7 +179,13 @@ module.exports = {
         })
         .limit(maxHits)
 
-      results = _.concat(results, tbdcResults)
+      results = _.concat(results, tbdcResults.map(r => ({
+        id: `tbdc-${r.permissionId}`,
+        title: `${r.ruleName} - ${r.companyName} (${r.moduleName})`,
+        description: r.ruleDescription || '',
+        path: `a/tbdc-companies/${r.companyId}`,
+        locale: 'pt'
+      })))
     }
 
     // -> Search TBDC Updates
@@ -186,11 +193,11 @@ module.exports = {
       const updateResults = await WIKI.models.knex('tbdc_updates')
         .join('tbdc_update_categories', 'tbdc_updates.categoryId', 'tbdc_update_categories.id')
         .select(
-          WIKI.models.knex.raw("'update-' || tbdc_updates.id as id"),
-          WIKI.models.knex.raw('tbdc_updates.title as title'),
-          WIKI.models.knex.raw("tbdc_update_categories.name || ': ' || substr(tbdc_updates.content, 1, 100) as description"),
-          WIKI.models.knex.raw("'novidades' as path"),
-          WIKI.models.knex.raw("'pt' as locale")
+          'tbdc_updates.id as updateId',
+          'tbdc_updates.title as updateTitle',
+          'tbdc_updates.content as updateContent',
+          'tbdc_updates.summary as updateSummary',
+          'tbdc_update_categories.name as categoryName'
         )
         .where(builder => {
           builder.where('tbdc_updates.isPublished', true)
@@ -202,7 +209,13 @@ module.exports = {
         })
         .limit(maxHits)
 
-      results = _.concat(results, updateResults)
+      results = _.concat(results, updateResults.map(r => ({
+        id: `update-${r.updateId}`,
+        title: r.updateTitle,
+        description: `${r.categoryName}: ${_.truncate(r.updateContent || r.updateSummary || '', { length: 100, omission: '' })}`,
+        path: 'novidades',
+        locale: 'pt'
+      })))
     }
 
     if (results.length > 0) {

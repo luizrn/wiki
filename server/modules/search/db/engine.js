@@ -3,6 +3,13 @@
 const _ = require('lodash')
 
 const MAX_SEARCH_TERMS = 8
+const PG_SEARCH_DOC_EXPR = `LOWER(
+  COALESCE(title, '') || ' ' ||
+  COALESCE(description, '') || ' ' ||
+  COALESCE(content, '') || ' ' ||
+  COALESCE(render, '') || ' ' ||
+  COALESCE(path, '')
+)`
 
 function escapeLike(value) {
   return value.replace(/[\\%_]/g, '\\$&')
@@ -18,7 +25,11 @@ function splitTerms(query) {
   )).slice(0, MAX_SEARCH_TERMS)
 }
 
-function addTermMatcher(builder, likePattern) {
+function addTermMatcher(builder, likePattern, isPostgres) {
+  if (isPostgres) {
+    builder.whereRaw(`${PG_SEARCH_DOC_EXPR} LIKE ?`, [likePattern])
+    return
+  }
   builder.whereRaw(`LOWER(COALESCE(title, '')) LIKE ? ESCAPE '\\'`, [likePattern])
     .orWhereRaw(`LOWER(COALESCE(description, '')) LIKE ? ESCAPE '\\'`, [likePattern])
     .orWhereRaw(`LOWER(COALESCE(content, '')) LIKE ? ESCAPE '\\'`, [likePattern])
@@ -61,6 +72,7 @@ module.exports = {
     const terms = splitTerms(query)
     const termLikes = terms.map(term => `%${escapeLike(term)}%`)
     const maxHits = Number(WIKI.config.search.maxHits) || 50
+    const isPostgres = WIKI.config.db.type === 'postgres'
 
     const scoreExpr = []
     const scoreParams = []
@@ -108,12 +120,12 @@ module.exports = {
             builder.andWhere('path', 'like', `${opts.path}%`)
           }
           builder.andWhere(builderSub => {
-            addTermMatcher(builderSub, queryLike)
+            addTermMatcher(builderSub, queryLike, isPostgres)
           })
           if (termLikes.length > 1) {
             for (const termLike of termLikes) {
               builder.andWhere(builderSub => {
-                addTermMatcher(builderSub, termLike)
+                addTermMatcher(builderSub, termLike, isPostgres)
               })
             }
           }

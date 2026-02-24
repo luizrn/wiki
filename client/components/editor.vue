@@ -296,6 +296,7 @@ export default {
                 $content: String!
                 $description: String!
                 $editor: String!
+                $filterUpdates: Boolean!
                 $isPrivate: Boolean!
                 $isPublished: Boolean!
                 $locale: String!
@@ -312,6 +313,7 @@ export default {
                     content: $content
                     description: $description
                     editor: $editor
+                    filterUpdates: $filterUpdates
                     isPrivate: $isPrivate
                     isPublished: $isPublished
                     locale: $locale
@@ -341,6 +343,7 @@ export default {
               content: this.$store.get('editor/content'),
               description: this.$store.get('page/description'),
               editor: this.$store.get('editor/editorKey'),
+              filterUpdates: false,
               locale: this.$store.get('page/locale'),
               isPrivate: false,
               isPublished: this.$store.get('page/isPublished'),

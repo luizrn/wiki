@@ -92,7 +92,7 @@ export default {
         this.$store.commit('showNotification', {
           message: this.$t('admin:api.refreshSuccess'),
           style: 'success',
-          icon: 'cached'
+          icon: 'mdi-cached'
         })
       }
     },
@@ -125,14 +125,14 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: this.enabled ? this.$t('admin:api.toggleStateDisabledSuccess') : this.$t('admin:api.toggleStateEnabledSuccess'),
-            icon: 'check'
+            icon: 'mdi-check'
           })
           await this.$apollo.queries.enabled.refetch()
         } else {
           this.$store.commit('showNotification', {
             style: 'red',
             message: _.get(resp, 'data.authentication.setApiState.responseResult.message', 'An unexpected error occurred.'),
-            icon: 'alert'
+            icon: 'mdi-alert'
           })
         }
       } catch (err) {
@@ -176,14 +176,14 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: this.$t('admin:api.revokeSuccess'),
-            icon: 'check'
+            icon: 'mdi-check'
           })
           this.refresh(false)
         } else {
           this.$store.commit('showNotification', {
             style: 'red',
             message: _.get(resp, 'data.authentication.revokeApiKey.responseResult.message', 'An unexpected error occurred.'),
-            icon: 'alert'
+            icon: 'mdi-alert'
           })
         }
       } catch (err) {

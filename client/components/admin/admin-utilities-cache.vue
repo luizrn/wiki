@@ -49,7 +49,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'Cache flushed successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)
@@ -74,7 +74,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'Temporary Uploads flushed successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)
@@ -96,7 +96,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Locale Client-Side Cache flushed successfully.',
         style: 'success',
-        icon: 'check'
+        icon: 'mdi-check'
       })
     }
   }

@@ -193,7 +193,7 @@ export default {
           this.$store.commit('showNotification', {
             style: 'green',
             message: `Page deleted successfully.`,
-            icon: 'check'
+            icon: 'mdi-check'
           })
           this.$router.replace('/pages')
         } else {
@@ -208,7 +208,7 @@ export default {
       this.$store.commit('showNotification', {
         style: 'indigo',
         message: `Coming soon...`,
-        icon: 'directions_boat'
+        icon: 'mdi-ferry'
       })
     }
   },

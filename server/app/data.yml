@@ -62,6 +62,16 @@ defaults:
       iconset: 'md'
       darkMode: false
       tocPosition: 'left'
+      chatEnabled: true
+      primaryColor: '#18563B'
+      secondaryColor: '#9BC113'
+      headerColor: '#18563B'
+      footerColor: '#18563B'
+      successColor: '#18563B'
+      warningColor: '#9BC113'
+      errorColor: '#D32F2F'
+      infoColor: '#18563B'
+      neutralColor: '#90A4AE'
     auth:
       autoLogin: false
       enforce2FA: false

@@ -1,0 +1,83 @@
+# ===============================================
+# AZURE DEVOPS WIKI
+# ===============================================
+
+extend type Query {
+  azureDevOpsWiki: AzureDevOpsWikiQuery
+}
+
+extend type Mutation {
+  azureDevOpsWiki: AzureDevOpsWikiMutation
+}
+
+type AzureDevOpsWikiQuery {
+  config: AzureDevOpsWikiConfig @auth(requires: ["manage:system"])
+  projects: [AzureDevOpsProject!]! @auth(requires: ["manage:system"])
+  wikis(project: String!): [AzureDevOpsWikiInfo!]! @auth(requires: ["manage:system"])
+}
+
+type AzureDevOpsWikiMutation {
+  saveConfig(
+    enabled: Boolean!
+    organization: String!
+    pat: String
+    defaultProject: String
+    defaultWiki: String
+    defaultLocale: String
+    targetBasePath: String
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  testConnection: DefaultResponse @auth(requires: ["manage:system"])
+
+  importFromAzure(
+    project: String!
+    wiki: String!
+    rootPath: String
+    locale: String
+    targetBasePath: String
+    incremental: Boolean
+  ): AzureDevOpsImportResult! @auth(requires: ["manage:system"])
+}
+
+type AzureDevOpsWikiConfig {
+  enabled: Boolean!
+  organization: String
+  hasPAT: Boolean!
+  patMasked: String
+  defaultProject: String
+  defaultWiki: String
+  defaultLocale: String
+  targetBasePath: String
+  lastSyncAt: Date
+}
+
+type AzureDevOpsProject {
+  id: String!
+  name: String!
+  state: String
+}
+
+type AzureDevOpsWikiInfo {
+  id: String!
+  name: String!
+  type: String
+  mappedPath: String
+}
+
+type AzureDevOpsImportItem {
+  azurePath: String
+  wikiPath: String
+  action: String!
+  pageId: Int
+  error: String
+}
+
+type AzureDevOpsImportResult {
+  responseResult: ResponseStatus
+  total: Int!
+  imported: Int!
+  updated: Int!
+  skipped: Int!
+  failed: Int!
+  items: [AzureDevOpsImportItem!]!
+}

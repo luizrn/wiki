@@ -272,7 +272,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'List of storage targets has been refreshed.',
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async save() {
@@ -292,7 +292,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Storage configuration saved successfully.',
         style: 'success',
-        icon: 'check'
+        icon: 'mdi-check'
       })
       this.$store.commit(`loadingStop`, 'admin-storage-savetargets')
     },
@@ -315,7 +315,7 @@ export default {
         this.$store.commit('showNotification', {
           message: 'Action completed.',
           style: 'success',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         console.warn(err)

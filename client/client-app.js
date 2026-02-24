@@ -171,6 +171,7 @@ Vue.component('Profile', () => import(/* webpackChunkName: "profile" */ './compo
 Vue.component('Register', () => import(/* webpackChunkName: "register" */ './components/register.vue'))
 Vue.component('SearchResults', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/search-results.vue'))
 Vue.component('SocialSharing', () => import(/* webpackPrefetch: true, webpackChunkName: "ui-extra" */ './components/common/social-sharing.vue'))
+Vue.component('StatusPage', () => import(/* webpackChunkName: "status" */ './components/status-page.vue'))
 Vue.component('Tags', () => import(/* webpackChunkName: "tags" */ './components/tags.vue'))
 Vue.component('TBDCUpdates', () => import(/* webpackChunkName: "tbdc" */ './components/admin/tbdc/admin-tbdc-updates.vue'))
 Vue.component('TBDCUpdatesPublic', () => import(/* webpackChunkName: "tbdc" */ './components/tbdc/tbdc-updates-public.vue'))
@@ -220,10 +221,20 @@ let bootstrap = () => {
         dark: darkModeEnabled,
         themes: {
           light: {
-            primary: siteConfig.primaryColor || '#1976d2'
+            primary: siteConfig.primaryColor || '#18563B',
+            secondary: siteConfig.secondaryColor || '#9BC113',
+            success: siteConfig.successColor || siteConfig.primaryColor || '#18563B',
+            warning: siteConfig.warningColor || siteConfig.secondaryColor || '#9BC113',
+            error: siteConfig.errorColor || '#D32F2F',
+            info: siteConfig.infoColor || siteConfig.primaryColor || '#18563B'
           },
           dark: {
-            primary: siteConfig.primaryColor || '#1976d2'
+            primary: siteConfig.primaryColor || '#18563B',
+            secondary: siteConfig.secondaryColor || '#9BC113',
+            success: siteConfig.successColor || siteConfig.primaryColor || '#18563B',
+            warning: siteConfig.warningColor || siteConfig.secondaryColor || '#9BC113',
+            error: siteConfig.errorColor || '#D32F2F',
+            info: siteConfig.infoColor || siteConfig.primaryColor || '#18563B'
           }
         }
       }

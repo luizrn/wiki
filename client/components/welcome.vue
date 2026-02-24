@@ -12,6 +12,7 @@
           v-btn.mt-5.mx-3.animated.fadeInUp.wait-p3s(color='primary', href='/a', x-large)
             v-icon(left) mdi-view-dashboard
             span {{ $t('welcome.goadmin') }}
+    chat-widget(v-if='$store.state.user.authenticated')
 
 </template>
 

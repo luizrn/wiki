@@ -106,7 +106,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Groups have been refreshed.',
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async createGroup() {
@@ -114,7 +114,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'red',
           message: 'Enter a group name.',
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
         return
       }
@@ -144,7 +144,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: `Group has been created successfully.`,
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)

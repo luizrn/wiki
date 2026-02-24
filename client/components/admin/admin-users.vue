@@ -128,7 +128,7 @@ export default {
         this.$store.commit('showNotification', {
           message: 'Users list has been refreshed.',
           style: 'success',
-          icon: 'cached'
+          icon: 'mdi-cached'
         })
       }
     },

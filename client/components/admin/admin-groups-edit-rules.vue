@@ -262,7 +262,7 @@ export default {
       this.$store.commit('showNotification', {
         style: 'indigo',
         message: `Coming soon...`,
-        icon: 'directions_boat'
+        icon: 'mdi-ferry'
       })
     },
     dude (stuff) {

@@ -33,9 +33,16 @@ type ThemingMutation {
     injectHead: String
     injectBody: String
     primaryColor: String
+    secondaryColor: String
     headerColor: String
     footerColor: String
+    successColor: String
+    warningColor: String
+    errorColor: String
+    infoColor: String
+    neutralColor: String
     chatEnabled: Boolean
+    movideskChatKey: String
   ): DefaultResponse @auth(requires: ["manage:theme", "manage:system"])
 }
 
@@ -52,9 +59,16 @@ type ThemingConfig {
   injectHead: String
   injectBody: String
   primaryColor: String
+  secondaryColor: String
   headerColor: String
   footerColor: String
+  successColor: String
+  warningColor: String
+  errorColor: String
+  infoColor: String
+  neutralColor: String
   chatEnabled: Boolean
+  movideskChatKey: String
 }
 
 type ThemingTheme {

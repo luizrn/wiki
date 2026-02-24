@@ -101,7 +101,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'Telemetry updated successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)
@@ -127,7 +127,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'Telemetry Client ID reset successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)

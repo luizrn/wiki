@@ -5,7 +5,7 @@ v-container(fluid, grid-list-lg)
       .admin-header
         v-icon.animated.fadeInUp(size='80', color='primary') mdi-office-building-cog-outline
         .admin-header-title
-          .headline.blue--text.text--darken-2.animated.fadeInLeft {{ isEdit ? 'Editar Empresa' : 'Nova Empresa' }}
+          .headline.primary--text.animated.fadeInLeft {{ isEdit ? 'Editar Empresa' : 'Nova Empresa' }}
           .subtitle-1.grey--text.animated.fadeInLeft.wait-p2s {{ company.name || 'Cadastro de cliente' }}
         v-spacer
         v-btn.ml-3.animated.fadeInDown(color='grey', icon, outlined, to='/tbdc-companies')
@@ -163,10 +163,10 @@ export default {
       ],
       levels: [
         { text: '🟢 Suporte tem permissão', value: 'GREEN', color: 'green' },
-        { text: '🔵 Sim, autorizado pelo focal', value: 'BLUE', color: 'blue' },
+        { text: '🔵 Sim, autorizado pelo focal', value: 'BLUE', color: '#18563B' },
         { text: '🟣 Somente CS tem permissão', value: 'PURPLE', color: 'purple' },
-        { text: '🟡 Após consulta com CS', value: 'YELLOW', color: 'yellow' },
-        { text: '🟠 Regra sobre parâmetro', value: 'ORANGE', color: 'orange' },
+        { text: '🟡 Após consulta com CS', value: 'YELLOW', color: '#7A980F' },
+        { text: '🟠 Regra sobre parâmetro', value: 'ORANGE', color: '#9BC113' },
         { text: '🔴 Não permitido', value: 'RED', color: 'red' },
         { text: '⚫ Não utiliza', value: 'BLACK', color: 'black' }
       ]
@@ -223,9 +223,20 @@ export default {
       }
     },
     addPermRow() {
+      const product = _.find(this.products, { id: this.selectedProductId })
+      const firstAvailableModule = _.find(_.get(product, 'modules', []), mod => !_.some(this.permissions, { moduleId: mod.id }))
+      const fallbackModule = _.get(product, 'modules[0]', null)
+      const chosenModule = firstAvailableModule || fallbackModule
+      if (!chosenModule) {
+        this.$store.commit('showNotification', {
+          message: 'Selecione um produto com módulos disponíveis antes de adicionar regra.',
+          style: 'warning'
+        })
+        return
+      }
       this.permissions.push({
-        moduleId: 1, // Fallback placeholder
-        ruleName: 'Nova Regra',
+        moduleId: chosenModule.id,
+        ruleName: chosenModule.name || 'Nova Regra',
         level: 'RED',
         description: '',
         isActive: true
@@ -263,7 +274,7 @@ export default {
               level: p.level,
               description: p.description,
               isActive: !!p.isActive
-            }))
+            })).filter(p => Number.isInteger(p.moduleId) && p.moduleId > 0)
           }
         })
         this.$store.commit('showNotification', { message: 'Cliente salvo com sucesso!', style: 'success' })

@@ -22,6 +22,7 @@ module.exports = async () => {
   WIKI.mail = require('./core/mail').init()
   WIKI.pageNotifications = require('./core/page-notifications').init()
   WIKI.system = require('./core/system').init()
+  WIKI.azureDevOpsWiki = require('./core/azure-devops-wiki')
   WIKI.webhooks.init()
 
   // ----------------------------------------
@@ -158,7 +159,17 @@ module.exports = async () => {
       company: WIKI.config.company,
       contentLicense: WIKI.config.contentLicense,
       footerOverride: WIKI.config.footerOverride,
-      logoUrl: WIKI.config.logoUrl
+      logoUrl: WIKI.config.logoUrl,
+      primaryColor: WIKI.config.theming.primaryColor || '#18563B',
+      secondaryColor: WIKI.config.theming.secondaryColor || '#9BC113',
+      headerColor: WIKI.config.theming.headerColor || (WIKI.config.theming.primaryColor || '#18563B'),
+      footerColor: WIKI.config.theming.footerColor || (WIKI.config.theming.primaryColor || '#18563B'),
+      successColor: WIKI.config.theming.successColor || '#18563B',
+      warningColor: WIKI.config.theming.warningColor || '#9BC113',
+      errorColor: WIKI.config.theming.errorColor || '#D32F2F',
+      infoColor: WIKI.config.theming.infoColor || (WIKI.config.theming.primaryColor || '#18563B'),
+      neutralColor: WIKI.config.theming.neutralColor || '#90A4AE',
+      chatEnabled: _.get(WIKI.config.theming, 'chatEnabled', true)
     }
     res.locals.langs = await WIKI.models.locales.getNavLocales({ cache: true })
     res.locals.analyticsCode = await WIKI.models.analytics.getCode({ cache: true })

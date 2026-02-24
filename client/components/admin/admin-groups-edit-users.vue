@@ -107,14 +107,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: `User has been assigned to ${this.group.name}.`,
-          icon: 'assignment_ind'
+          icon: 'mdi-badge-account'
         })
         this.$emit('refresh')
       } catch (err) {
         this.$store.commit('showNotification', {
           style: 'red',
           message: err.message,
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
     },
@@ -133,14 +133,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: `User has been unassigned from ${this.group.name}.`,
-          icon: 'assignment_ind'
+          icon: 'mdi-badge-account'
         })
         this.$emit('refresh')
       } catch (err) {
         this.$store.commit('showNotification', {
           style: 'red',
           message: err.message,
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
     }

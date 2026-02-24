@@ -190,7 +190,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:ssl.httpPortRedirectSaveSuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.info.httpRedirection = !this.info.httpRedirection
@@ -225,7 +225,7 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: this.$t('admin:ssl.renewCertificateSuccess'),
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)

@@ -149,7 +149,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('tags.deleteSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
           this.refresh()
         } else {
@@ -189,7 +189,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('tags.saveSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
           this.current.updatedAt = new Date()
         } else {
@@ -206,7 +206,7 @@ export default {
       this.$store.commit('showNotification', {
         message: this.$t('tags.refreshSuccess'),
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     }
   },

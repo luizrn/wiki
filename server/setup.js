@@ -129,6 +129,16 @@ module.exports = () => {
         theme: 'default',
         darkMode: false,
         iconset: 'mdi',
+        chatEnabled: true,
+        primaryColor: '#18563B',
+        secondaryColor: '#9BC113',
+        headerColor: '#18563B',
+        footerColor: '#18563B',
+        successColor: '#18563B',
+        warningColor: '#9BC113',
+        errorColor: '#D32F2F',
+        infoColor: '#18563B',
+        neutralColor: '#90A4AE',
         injectCSS: '',
         injectHead: '',
         injectBody: ''
@@ -255,18 +265,21 @@ module.exports = () => {
         throw new Error('Incorrect groups auto-increment configuration! Should start at 0 and increment by 1. Contact your database administrator.')
       }
 
-      // Load local authentication strategy
-      await WIKI.models.authentication.query().insert({
-        key: 'local',
-        config: {},
-        selfRegistration: false,
-        isEnabled: true,
-        domainWhitelist: {v: []},
-        autoEnrollGroups: {v: []},
-        order: 0,
-        strategyKey: 'local',
-        displayName: 'Local'
-      })
+      // Load local authentication strategy (idempotent for partially initialized DBs)
+      const hasLocalAuth = await WIKI.models.authentication.query().findOne({ key: 'local' })
+      if (!hasLocalAuth) {
+        await WIKI.models.authentication.query().insert({
+          key: 'local',
+          config: {},
+          selfRegistration: false,
+          isEnabled: true,
+          domainWhitelist: { v: [] },
+          autoEnrollGroups: { v: [] },
+          order: 0,
+          strategyKey: 'local',
+          displayName: 'Local'
+        })
+      }
 
       // Load editors + enable default
       await WIKI.models.editors.refreshEditorsFromDisk()

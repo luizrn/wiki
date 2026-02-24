@@ -43,7 +43,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'New Certificates generated successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
           Cookies.remove('jwt')
           _.delay(() => {
@@ -72,7 +72,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'Guest user was reset successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)

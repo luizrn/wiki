@@ -1,6 +1,6 @@
-mutation($theme: String!, $iconset: String!, $darkMode: Boolean!, $tocPosition: String, $injectCSS: String, $injectHead: String, $injectBody: String, $primaryColor: String, $headerColor: String, $footerColor: String) {
+mutation($theme: String!, $iconset: String!, $darkMode: Boolean!, $tocPosition: String, $injectCSS: String, $injectHead: String, $injectBody: String, $primaryColor: String, $secondaryColor: String, $headerColor: String, $footerColor: String, $successColor: String, $warningColor: String, $errorColor: String, $infoColor: String, $neutralColor: String, $chatEnabled: Boolean, $movideskChatKey: String) {
   theming {
-    setConfig(theme: $theme, iconset: $iconset, darkMode: $darkMode, tocPosition: $tocPosition, injectCSS: $injectCSS, injectHead: $injectHead, injectBody: $injectBody, primaryColor: $primaryColor, headerColor: $headerColor, footerColor: $footerColor) {
+    setConfig(theme: $theme, iconset: $iconset, darkMode: $darkMode, tocPosition: $tocPosition, injectCSS: $injectCSS, injectHead: $injectHead, injectBody: $injectBody, primaryColor: $primaryColor, secondaryColor: $secondaryColor, headerColor: $headerColor, footerColor: $footerColor, successColor: $successColor, warningColor: $warningColor, errorColor: $errorColor, infoColor: $infoColor, neutralColor: $neutralColor, chatEnabled: $chatEnabled, movideskChatKey: $movideskChatKey) {
       responseResult {
         succeeded
         errorCode

@@ -184,7 +184,7 @@ export default {
       this.$store.commit('showNotification', {
         message: this.$t('admin:system.refreshSuccess'),
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async performUpgrade () {

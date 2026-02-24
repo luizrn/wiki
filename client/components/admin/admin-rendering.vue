@@ -173,7 +173,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Rendering active configuration has been reloaded.',
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async save () {
@@ -194,7 +194,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Rendering configuration saved successfully.',
         style: 'success',
-        icon: 'check'
+        icon: 'mdi-check'
       })
       this.$store.commit(`loadingStop`, 'admin-rendering-saverenderers')
     }

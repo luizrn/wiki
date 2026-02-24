@@ -67,7 +67,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Flags applied successfully.',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)

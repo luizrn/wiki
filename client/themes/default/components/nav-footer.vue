@@ -1,12 +1,16 @@
 <template lang="pug">
   v-footer.justify-center(:color='bgColor', inset)
-    .caption.grey--text(:class='$vuetify.theme.dark ? `text--lighten-1` : `text--darken-1`')
-      template(v-if='footerOverride')
-        span(v-html='footerOverrideRender + ` |&nbsp;`')
-      template(v-else-if='company && company.length > 0 && contentLicense !== ``')
-        span(v-if='contentLicense === `alr`') {{ $t('common:footer.copyright', { company: company, year: currentYear, interpolation: { escapeValue: false } }) }} |&nbsp;
-        span(v-else) {{ $t('common:footer.license', { company: company, license: $t('common:license.' + contentLicense), interpolation: { escapeValue: false } }) }} |&nbsp;
-      span {{ $t('common:footer.poweredBy') }} #[a(href='https://wiki.js.org', ref='nofollow') Wiki.js]
+    .d-flex.align-center.flex-wrap.justify-center
+      .caption.grey--text(:class='$vuetify.theme.dark ? `text--lighten-1` : `text--darken-1`')
+        template(v-if='footerOverride')
+          span(v-html='footerOverrideRender + ` |&nbsp;`')
+        template(v-else-if='company && company.length > 0 && contentLicense !== ``')
+          span(v-if='contentLicense === `alr`') {{ $t('common:footer.copyright', { company: company, year: currentYear, interpolation: { escapeValue: false } }) }} |&nbsp;
+          span(v-else) {{ $t('common:footer.license', { company: company, license: $t('common:license.' + contentLicense), interpolation: { escapeValue: false } }) }} |&nbsp;
+        span Distribuído por #[a(href='https://wiki.js.org', ref='nofollow') Wiki.js] (versão TBDC V2)
+      v-btn.ml-3(x-small, outlined, color='success', href='/status')
+        v-icon(left, x-small, color='green') mdi-check-circle
+        span Status dos sistemas TBDC em tempo real
 </template>
 
 <script>

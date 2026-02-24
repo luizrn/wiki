@@ -1,13 +1,13 @@
 <template lang='pug'>
 v-app(:dark='$vuetify.theme.dark').boards
   nav-header
-  v-navigation-drawer(app, fixed, clipped, width='320', permanent)
-    v-toolbar(flat, dense, color='primary', dark)
+  v-navigation-drawer.boards-sidebar(app, fixed, clipped, width='320', permanent)
+    v-toolbar(flat, dense, color='#18563B', dark)
       .subtitle-1 Boards
       v-spacer
       v-btn(icon, small, @click='showCreateBoard = true'): v-icon mdi-plus
     v-list(dense, two-line)
-      v-list-item(v-for='b in boards' :key='b.id' @click='selectBoard(b.id)')
+      v-list-item(v-for='b in boards' :key='b.id' @click='selectBoard(b.id)', :class='{ "board-active-item": selectedBoardId === b.id }')
         v-list-item-avatar: v-icon(:color='b.color || `primary`') {{ b.icon || 'mdi-view-kanban' }}
         v-list-item-content
           v-list-item-title {{ b.title }}
@@ -22,22 +22,24 @@ v-app(:dark='$vuetify.theme.dark').boards
         v-list-item-avatar: v-icon(:color='t.color || `blue-grey`') mdi-account-group
         v-list-item-title {{ t.name }}
 
-  v-content(:class='$vuetify.theme.dark ? `grey darken-4` : `grey lighten-4`')
+  v-content.board-content
     v-container(fluid)
       v-card(v-if='!board')
         v-card-text.text-center.py-12
           v-icon(size='72', color='grey') mdi-view-kanban
           .subtitle-1.mt-3 Selecione um board
       template(v-else)
-        v-toolbar(flat, color='transparent')
+        v-toolbar.board-header(flat, color='transparent')
           v-icon.mr-2(:color='board.color || `primary`') {{board.icon || 'mdi-view-kanban'}}
           .headline {{ board.title }}
           v-spacer
-          v-btn.mr-2(outlined, color='primary', @click='openBoardSettings'): Configurar
+          v-btn.mr-2.board-config-btn(outlined, color='primary', @click='openBoardSettings')
+            v-icon(left, small) mdi-cog
+            span Configurar
           v-btn(color='primary', @click='openStage()'): Nova etapa
-        draggable.d-flex(style='gap:12px;overflow-x:auto', v-model='board.stages', group='stages', handle='.stage-handle', @change='moveStage')
-          v-card(v-for='s in board.stages' :key='s.id', style='min-width:300px;max-width:300px')
-            v-toolbar(flat, dense)
+        draggable.d-flex.stage-lane(style='gap:12px;overflow-x:auto', v-model='board.stages', group='stages', handle='.stage-handle', @change='moveStage')
+          v-card.stage-card(v-for='s in board.stages' :key='s.id', style='min-width:300px;max-width:300px', :style='{ borderTop: `4px solid ${s.color || "#9BC113"}` }')
+            v-toolbar(flat, dense, color='rgba(24,86,59,0.06)')
               v-icon.stage-handle.mr-1(color='grey') mdi-drag
               .subtitle-2 {{ s.title }}
               v-spacer
@@ -45,10 +47,13 @@ v-app(:dark='$vuetify.theme.dark').boards
               v-btn(icon, x-small, @click='delStage(s)'): v-icon(small, color='red') mdi-delete
             v-divider
             draggable(:list='s.cards', :group='{name:`cards`}', ghost-class='card-ghost', @change='moveCard(s, $event)')
-              v-card.mx-2.my-2(v-for='c in s.cards' :key='c.id' outlined @click='openCard(c)')
+              v-card.mx-2.my-2.board-card(v-for='c in s.cards' :key='c.id' outlined @click='openCard(c)')
                 v-card-text.py-2
                   .body-2.font-weight-bold {{ c.title }}
                   .caption.grey--text {{ c.assigneeName || 'sem responsável' }}
+                  .mt-1
+                    v-chip.mr-1(x-small, label, :color='statusColor(c.status)', dark) {{ statusLabel(c.status) }}
+                    v-chip(x-small, label, color='grey lighten-3') {{ c.priority || 'média' }}
             v-card-actions
               v-btn(text, small, color='primary', @click='openCard({ stageId: s.id })')
                 v-icon(left, small) mdi-plus
@@ -117,12 +122,26 @@ v-app(:dark='$vuetify.theme.dark').boards
           v-col(cols='4')
             v-select(v-model='fCard.stageId', :items='board ? board.stages : []', item-text='title', item-value='id', label='Etapa', outlined, dense)
             v-select(v-model='fCard.priority', :items='[`low`,`medium`,`high`,`critical`]', label='Prioridade', outlined, dense)
-            v-select(v-model='fCard.status', :items='[`open`,`blocked`,`in-progress`,`review`,`done`]', label='Status', outlined, dense)
+            v-select(v-model='fCard.status', :items='statusOptions', item-text='text', item-value='value', label='Status', outlined, dense)
             v-select(v-model='fCard.assigneeId', :items='users', item-text='name', item-value='id', label='Responsável', clearable, outlined, dense)
             v-text-field(v-model.number='fCard.estimatePoints', label='Story points', type='number', outlined, dense)
         v-row
-          v-col(cols='6'): v-text-field(v-model='fCard.startDate', label='Início YYYY-MM-DD', outlined, dense)
-          v-col(cols='6'): v-text-field(v-model='fCard.dueDate', label='Prazo YYYY-MM-DD', outlined, dense)
+          v-col(cols='6')
+            v-menu(v-model='dateMenus.start', :close-on-content-click='false', transition='scale-transition', offset-y, min-width='290')
+              template(v-slot:activator='{ on, attrs }')
+                v-text-field(v-model='fCard.startDate', label='Início', prepend-inner-icon='mdi-calendar', outlined, dense, readonly, v-bind='attrs', v-on='on')
+              v-date-picker(v-model='fCard.startDate', locale='pt-br', color='primary')
+                v-spacer
+                v-btn(text, color='primary', @click='fCard.startDate = ``') Limpar
+                v-btn(text, color='primary', @click='dateMenus.start = false') OK
+          v-col(cols='6')
+            v-menu(v-model='dateMenus.due', :close-on-content-click='false', transition='scale-transition', offset-y, min-width='290')
+              template(v-slot:activator='{ on, attrs }')
+                v-text-field(v-model='fCard.dueDate', label='Prazo', prepend-inner-icon='mdi-calendar-month', outlined, dense, readonly, v-bind='attrs', v-on='on')
+              v-date-picker(v-model='fCard.dueDate', locale='pt-br', color='primary')
+                v-spacer
+                v-btn(text, color='primary', @click='fCard.dueDate = ``') Limpar
+                v-btn(text, color='primary', @click='dateMenus.due = false') OK
         v-combobox(v-model='fCard.labels', label='Labels', multiple, chips, outlined, dense)
         v-combobox(v-model='fCard.checklist', label='Checklist', multiple, chips, outlined, dense)
         v-combobox(v-model='fCard.attachments', label='Anexos/URLs', multiple, chips, outlined, dense)
@@ -199,12 +218,20 @@ export default {
     showStage: false,
     showCard: false,
     showTeam: false,
+    dateMenus: { start: false, due: false },
     fBoard: { title: '', description: '', color: '#1976d2', icon: 'mdi-view-kanban', isPublic: false, isArchived: false, groupIds: [] },
     fGroups: [],
     fTeamIds: [],
     fStage: { id: null, title: '', color: '#90a4ae', wipLimit: null, isDone: false },
     fCard: { id: null, stageId: null, title: '', description: '', priority: 'medium', status: 'open', startDate: '', dueDate: '', assigneeId: null, estimatePoints: null, coverColor: '', labels: [], checklist: [], attachments: [], watchers: [], customFields: '{}' },
-    fTeam: { id: null, name: '', description: '', color: '#546e7a', isArchived: false, memberIds: [], boardIds: [] }
+    fTeam: { id: null, name: '', description: '', color: '#546e7a', isArchived: false, memberIds: [], boardIds: [] },
+    statusOptions: [
+      { text: 'Aberto', value: 'open' },
+      { text: 'Bloqueado', value: 'blocked' },
+      { text: 'Em andamento', value: 'in-progress' },
+      { text: 'Em revisão', value: 'review' },
+      { text: 'Concluído', value: 'done' }
+    ]
   }),
   created() {
     this.$store.commit('page/SET_MODE', 'boards')
@@ -335,12 +362,65 @@ export default {
       await this.$apollo.mutate({ mutation: M.delTeam, variables: { id: this.fTeam.id } })
       this.showTeam = false
       await this.refresh(this.board ? this.board.id : null)
+    },
+    statusLabel(status) {
+      const found = _.find(this.statusOptions, ['value', status])
+      return _.get(found, 'text', 'Aberto')
+    },
+    statusColor(status) {
+      switch (status) {
+        case 'done': return '#18563B'
+        case 'in-progress': return '#2E7D32'
+        case 'review': return '#9BC113'
+        case 'blocked': return '#C62828'
+        default: return '#546E7A'
+      }
     }
   }
 }
 </script>
 
 <style lang='scss'>
+.boards {
+  .boards-sidebar {
+    border-right: 1px solid rgba(24, 86, 59, 0.12);
+  }
+  .board-active-item {
+    background: rgba(24, 86, 59, 0.1);
+  }
+  .board-content {
+    background: linear-gradient(180deg, #f2f8f4 0%, #eef4f1 100%);
+  }
+  .board-header {
+    border: 1px solid rgba(24, 86, 59, 0.18);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: linear-gradient(90deg, rgba(24, 86, 59, 0.08) 0%, rgba(155, 193, 19, 0.1) 100%);
+  }
+  .board-config-btn {
+    background: rgba(24, 86, 59, 0.06) !important;
+    border-color: #18563B !important;
+  }
+  .board-config-btn .v-btn__content {
+    color: #18563B !important;
+    font-weight: 600;
+  }
+  .stage-lane {
+    padding-bottom: 8px;
+  }
+  .stage-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: #fff;
+  }
+  .board-card {
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .board-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(24, 86, 59, 0.2);
+  }
+}
 .stage-handle { cursor: grab; }
 .card-ghost { opacity: .45; }
 </style>

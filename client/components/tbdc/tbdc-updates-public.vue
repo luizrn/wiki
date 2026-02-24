@@ -69,7 +69,7 @@
                   .resource-target.pa-4.mb-6(v-if='post.summary')
                     .overline.mb-1 PARA QUEM É ESSE RECURSO?
                     .body-1.font-weight-medium
-                      v-icon(left, color='orange') mdi-trophy
+                      v-icon(left, color='#9BC113') mdi-trophy
                       | {{post.summary}}
 
                   .post-body.body-1(v-html='renderMarkdown(post.content)')
@@ -79,9 +79,9 @@
                   .survey-title.overline Satisfação: O que você achou dessa novidade?
                   v-spacer
                   .emoji-buttons
-                    v-btn(icon, x-large, @click='vote(post.id, 3)', :color='myVotes[post.id] === 3 ? "green" : "grey"')
+                    v-btn(icon, x-large, @click='vote(post.id, 3)', :color='myVotes[post.id] === 3 ? "primary" : "grey"')
                       v-icon(size='40') mdi-emoticon-happy-outline
-                    v-btn(icon, x-large, @click='vote(post.id, 2)', :color='myVotes[post.id] === 2 ? "orange" : "grey"')
+                    v-btn(icon, x-large, @click='vote(post.id, 2)', :color='myVotes[post.id] === 2 ? "#9BC113" : "grey"')
                       v-icon(size='40') mdi-emoticon-neutral-outline
                     v-btn(icon, x-large, @click='vote(post.id, 1)', :color='myVotes[post.id] === 1 ? "red" : "grey"')
                       v-icon(size='40') mdi-emoticon-sad-outline
@@ -182,12 +182,15 @@ export default {
 
 <style lang='scss' scoped>
 .tbdc-updates-public {
-  background-color: #f0f2f5;
+  --tbdc-primary: #18563B;
+  --tbdc-primary-dark: #123f2b;
+  --tbdc-secondary: #9BC113;
+  background-color: #f4f7f5;
   min-height: 100vh;
 }
 
 .updates-header {
-  background: linear-gradient(135deg, #004d26 0%, #00331a 100%);
+  background: linear-gradient(135deg, var(--tbdc-primary) 0%, var(--tbdc-primary-dark) 100%);
   padding: 16px 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
@@ -205,7 +208,7 @@ export default {
 .post-card {
   border-radius: 12px !important;
   margin-bottom: 32px;
-  border-left: 6px solid transparent;
+  border-left: 6px solid rgba(24, 86, 59, 0.25);
   transition: transform 0.2s;
   &:hover {
     transform: translateY(-2px);
@@ -213,9 +216,9 @@ export default {
 }
 
 .resource-target {
-  background-color: #fff9f0;
+  background-color: rgba(155, 193, 19, 0.10);
   border-radius: 8px;
-  border-left: 4px solid #f29900;
+  border-left: 4px solid var(--tbdc-secondary);
 }
 
 .survey-section {
@@ -229,7 +232,7 @@ export default {
 }
 
 .post-title {
-  color: #1a1a1a;
+  color: var(--tbdc-primary);
   line-height: 1.2;
 }
 

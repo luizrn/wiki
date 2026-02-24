@@ -703,14 +703,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:users.userActivateSuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.user.isActive = true
       } else {
         this.$store.commit('showNotification', {
           style: 'red',
           message: _.get(resp, 'data.users.activate.responseResult.message', 'An unexpected error occurred.'),
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.$store.commit(`loadingStop`, 'admin-users-activate')
@@ -743,14 +743,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:users.userDeactivateSuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.user.isActive = false
       } else {
         this.$store.commit('showNotification', {
           style: 'red',
           message: _.get(resp, 'data.users.deactivate.responseResult.message', 'An unexpected error occurred.'),
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.$store.commit(`loadingStop`, 'admin-users-deactivate')
@@ -792,14 +792,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:users.userDeleteSuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.$router.push('/users')
       } else {
         this.$store.commit('showNotification', {
           style: 'red',
           message: _.get(resp, 'data.users.delete.responseResult.message', 'An unexpected error occurred.'),
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.deleteUserDialog = false
@@ -810,13 +810,13 @@ export default {
         this.$store.commit('showNotification', {
           style: 'red',
           message: 'You cannot select the account you\'re about to delete!',
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       } else if (selUsr.id === 2) {
         this.$store.commit('showNotification', {
           style: 'red',
           message: 'You cannot use the guest account for this operation.',
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       } else {
         this.deleteReplaceUser = selUsr
@@ -858,14 +858,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:users.userUpdateSuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.$router.push('/users')
       } else {
         this.$store.commit('showNotification', {
           style: 'red',
           message: _.get(resp, 'data.users.update.responseResult.message', 'An unexpected error occurred.'),
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.$store.commit(`loadingStop`, 'admin-users-update')
@@ -888,7 +888,7 @@ export default {
         this.$store.commit('showNotification', {
           message: this.$t('admin:users.userAlreadyAssignedToGroup'),
           style: 'error',
-          icon: 'alert'
+          icon: 'mdi-alert'
         })
       } else {
         this.user.groups.push(_.find(this.groups, ['id', this.newGroup]))
@@ -929,14 +929,14 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:users.userVerifySuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.user.isVerified = true
       } else {
         this.$store.commit('showNotification', {
           style: 'red',
           message: _.get(resp, 'data.users.verify.responseResult.message', 'An unexpected error occurred.'),
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.$store.commit(`loadingStop`, 'admin-users-verify')
@@ -970,14 +970,14 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: this.$t('admin:users.userTFADisableSuccess'),
-            icon: 'check'
+            icon: 'mdi-check'
           })
           this.user.tfaIsActive = false
         } else {
           this.$store.commit('showNotification', {
             style: 'red',
             message: _.get(resp, 'data.users.disableTFA.responseResult.message', 'An unexpected error occurred.'),
-            icon: 'warning'
+            icon: 'mdi-alert'
           })
         }
       } else {
@@ -1004,14 +1004,14 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: this.$t('admin:users.userTFAEnableSuccess'),
-            icon: 'check'
+            icon: 'mdi-check'
           })
           this.user.tfaIsActive = true
         } else {
           this.$store.commit('showNotification', {
             style: 'red',
             message: _.get(resp, 'data.users.enableTFA.responseResult.message', 'An unexpected error occurred.'),
-            icon: 'warning'
+            icon: 'mdi-alert'
           })
         }
       }

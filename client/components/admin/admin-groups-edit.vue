@@ -176,7 +176,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: `Group changes have been saved.`,
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -210,7 +210,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: `Group ${this.group.name} has been deleted.`,
-          icon: 'delete'
+          icon: 'mdi-delete'
         })
         this.$router.replace('/groups')
       } catch (err) {

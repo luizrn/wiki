@@ -9,7 +9,7 @@ v-container(fluid, grid-list-lg)
           .subtitle-1.grey--text.animated.fadeInLeft.wait-p4s Configure outgoing webhooks for system events.
         v-spacer
         v-btn.animated.fadeInDown(color='success', depressed, @click='save', large, :disabled='!canSave', :loading='saving')
-          v-icon(left) check
+          v-icon(left) mdi-check
           span {{$t('common:actions.apply')}}
 
     v-flex(lg3, xs12)
@@ -18,7 +18,7 @@ v-container(fluid, grid-list-lg)
           .subtitle-1 Webhooks
           v-spacer
           v-btn(icon, small, @click='addWebhook')
-            v-icon add
+            v-icon mdi-plus
         v-list(two-line, dense).py-0
           template(v-for='(str, idx) in webhooks')
             v-list-item(:key='str.id', @click='selectWebhook(str)')
@@ -26,9 +26,9 @@ v-container(fluid, grid-list-lg)
                 v-icon(:color='str.isEnabled ? "primary" : "grey"') mdi-webhook
               v-list-item-content
                 v-list-item-title.body-2(:class='selectedWebhookId === str.id ? "primary--text" : ""') {{ str.title }}
-                v-list-item-sub-title.caption {{ str.url }}
+                v-list-item-subtitle.caption {{ str.url }}
               v-list-item-avatar(v-if='selectedWebhookId === str.id')
-                v-icon.animated.fadeInLeft(color='primary') arrow_forward_ios
+                v-icon.animated.fadeInLeft(color='primary') mdi-chevron-right
             v-divider(v-if='idx < webhooks.length - 1')
 
     v-flex(xs12, lg9)
@@ -152,7 +152,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'warning',
           message: 'Preencha título, URL válida e ao menos 1 evento.',
-          icon: 'alert'
+          icon: 'mdi-alert'
         })
         return
       }
@@ -173,7 +173,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: `Webhook ${isNew ? 'created' : 'updated'} successfully.`,
-          icon: 'check'
+          icon: 'mdi-check'
         })
 
         if (isNew) {
@@ -205,7 +205,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Webhook deleted successfully.',
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.selectedWebhookId = null
       } catch (err) {
@@ -224,7 +224,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Test webhook sent successfully.',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -237,7 +237,9 @@ export default {
     webhooks: {
       query: webhooksQueryList,
       fetchPolicy: 'network-only',
-      update: (data) => _.map(_.get(data, 'webhooks.list', []), this.normalizeWebhook),
+      update (data) {
+        return _.map(_.get(data, 'webhooks.list', []), hook => this.normalizeWebhook(hook))
+      },
       watchLoading (isLoading) {
         this.$store.commit(`loading${isLoading ? 'Start' : 'Stop'}`, 'admin-webhooks-refresh')
       }

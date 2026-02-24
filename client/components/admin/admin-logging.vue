@@ -9,17 +9,17 @@
             .subtitle-1.grey--text Configure the system logger(s) #[v-chip(label, color='primary', small).white--text coming soon]
           v-spacer
           v-btn(outline, color='grey', @click='refresh', large)
-            v-icon refresh
+            v-icon mdi-refresh
           v-btn(color='black', disabled, depressed, @click='toggleConsole', large)
-            v-icon check
+            v-icon mdi-check
             span Live Trail
           v-btn(color='success', @click='save', depressed, large)
-            v-icon(left) check
+            v-icon(left) mdi-check
             span {{$t('common:actions.apply')}}
 
         v-card.mt-3
           v-tabs(color='grey darken-2', fixed-tabs, slider-color='white', show-arrows, dark)
-            v-tab(key='settings'): v-icon settings
+            v-tab(key='settings'): v-icon mdi-cog
             v-tab(v-for='logger in activeLoggers', :key='logger.key') {{ logger.title }}
 
             v-tab-item(key='settings', :transition='false', :reverse-transition='false')
@@ -135,7 +135,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'List of loggers has been refreshed.',
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async save() {
@@ -154,7 +154,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Logging configuration saved successfully.',
         style: 'success',
-        icon: 'check'
+        icon: 'mdi-check'
       })
       this.$store.commit(`loadingStop`, 'admin-logging-saveloggers')
     },

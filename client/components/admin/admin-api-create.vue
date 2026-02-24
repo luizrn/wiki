@@ -155,7 +155,7 @@ export default {
         return this.$store.commit('showNotification', {
           style: 'red',
           message: err,
-          icon: 'alert'
+          icon: 'mdi-alert'
         })
       }
 
@@ -192,7 +192,7 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: this.$t('admin:api.newKeySuccess'),
-            icon: 'check'
+            icon: 'mdi-check'
           })
 
           this.name = ''
@@ -212,7 +212,7 @@ export default {
           this.$store.commit('showNotification', {
             style: 'red',
             message: _.get(resp, 'data.authentication.createApiKey.responseResult.message', 'An unexpected error occurred.'),
-            icon: 'alert'
+            icon: 'mdi-alert'
           })
         }
       } catch (err) {

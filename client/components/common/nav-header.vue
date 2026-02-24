@@ -245,9 +245,9 @@
 
           v-tooltip(bottom, v-if='isAuthenticated')
             template(v-slot:activator='{ on }')
-              v-btn(icon, tile, height='64', v-on='on', href='/boards', :aria-label='`Boards`')
-                v-icon(color='grey') mdi-view-kanban
-            span Boards
+              v-btn(icon, tile, height='64', v-on='on', href='/boards', :aria-label='`Boards de Tarefas`')
+                v-icon(color='grey') mdi-view-column-outline
+            span Boards de Tarefas
 
           v-menu(v-if='isAuthenticated', v-model='notificationsMenu', offset-y, bottom, min-width='340', max-width='420', transition='slide-y-transition', left)
             template(v-slot:activator='{ on: menu, attrs }')
@@ -262,7 +262,7 @@
                     aria-label='Notificações'
                     @click='refreshNotifications'
                     )
-                    v-badge(:content='unreadCount', :value='unreadCount > 0', color='red', overlap)
+                    v-badge(:content='totalNotificationCount', :value='totalNotificationCount > 0', color='red', overlap)
                       v-icon(color='grey') mdi-bell-outline
                 span Notificações
             v-list(nav, dense)
@@ -273,6 +273,24 @@
               v-list-item(@click='markAllNotificationsRead', :disabled='unreadCount < 1')
                 v-list-item-action: v-icon(color='primary') mdi-check-all
                 v-list-item-title Marcar todas como lidas
+              template(v-if='isAdmin && pendingPublicLinks.length > 0')
+                v-divider
+                v-list-item.py-2.grey(:class='$vuetify.theme.dark ? `darken-4-l5` : `lighten-5`')
+                  v-list-item-content
+                    v-list-item-title Pedidos de Link Público
+                    v-list-item-subtitle {{pendingPublicLinks.length}} pendente(s)
+                template(v-for='req in pendingPublicLinks')
+                  v-list-item(:key='`pl-` + req.id', @click='openPublicLinkRequest(req)')
+                    v-list-item-action
+                      v-icon(color='orange') mdi-link-variant
+                    v-list-item-content
+                      v-list-item-title.font-weight-bold {{_.get(req, 'page.title', 'Página sem título')}}
+                      v-list-item-subtitle Solicitado por {{_.get(req, 'creator.name', 'N/A')}} • {{_.get(req, 'page.locale', 'pt-br')}}/{{_.get(req, 'page.path', '')}}
+                    v-list-item-action
+                      v-btn(icon, x-small, color='success', @click.stop='approvePublicLink(req.id)')
+                        v-icon(small) mdi-check
+                      v-btn(icon, x-small, color='error', @click.stop='rejectPublicLink(req.id)')
+                        v-icon(small) mdi-close
               v-divider
               template(v-if='notifications.length > 0')
                 template(v-for='item in notifications')
@@ -421,6 +439,7 @@ export default {
       notificationsMenu: false,
       unreadCount: 0,
       notifications: [],
+      pendingPublicLinks: [],
       isProfileOpen: false,
       hasUnreadUpdates: false
     }
@@ -479,6 +498,9 @@ export default {
     },
     canExportArticle () {
       return !!this.path && this.mode !== 'edit' && ['view', 'history', 'source'].includes(this.mode) && this.hasReadPagesPermission
+    },
+    totalNotificationCount () {
+      return this.unreadCount + (this.isAdmin ? this.pendingPublicLinks.length : 0)
     },
     headerColor: get('site/headerColor')
   },
@@ -613,10 +635,14 @@ export default {
         return
       }
       try {
-        await Promise.all([
+        const requests = [
           this.$apollo.queries.notifications.refetch(),
           this.$apollo.queries.unreadCount.refetch()
-        ])
+        ]
+        if (this.isAdmin && this.$apollo.queries.pendingPublicLinks) {
+          requests.push(this.$apollo.queries.pendingPublicLinks.refetch())
+        }
+        await Promise.all(requests)
       } catch (err) {}
     },
     async markAllNotificationsRead () {
@@ -663,6 +689,65 @@ export default {
         }
       } catch (err) {}
       window.location.assign(item.url)
+    },
+    async approvePublicLink (id) {
+      try {
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`
+            mutation ($id: Int!) {
+              publicLinks {
+                approve(id: $id) {
+                  responseResult {
+                    succeeded
+                    message
+                  }
+                }
+              }
+            }
+          `,
+          variables: { id }
+        })
+        if (!_.get(data, 'publicLinks.approve.responseResult.succeeded', false)) {
+          throw new Error(_.get(data, 'publicLinks.approve.responseResult.message', 'Falha ao aprovar link público.'))
+        }
+        await this.refreshNotifications()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    async rejectPublicLink (id) {
+      try {
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`
+            mutation ($id: Int!) {
+              publicLinks {
+                reject(id: $id) {
+                  responseResult {
+                    succeeded
+                    message
+                  }
+                }
+              }
+            }
+          `,
+          variables: { id }
+        })
+        if (!_.get(data, 'publicLinks.reject.responseResult.succeeded', false)) {
+          throw new Error(_.get(data, 'publicLinks.reject.responseResult.message', 'Falha ao rejeitar link público.'))
+        }
+        await this.refreshNotifications()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    openPublicLinkRequest (req) {
+      const locale = _.get(req, 'page.locale')
+      const path = _.get(req, 'page.path')
+      if (locale && path) {
+        window.location.assign(`/${locale}/${path}`)
+      } else {
+        window.location.assign('/a/public-links')
+      }
     },
     goHome () {
       if (this.locales && this.locales.length > 0) {
@@ -716,6 +801,32 @@ export default {
       pollInterval: 30000,
       fetchPolicy: 'network-only',
       update: data => _.get(data, 'pageNotifications.myInbox', [])
+    },
+    pendingPublicLinks: {
+      query: gql`
+        query {
+          publicLinks {
+            list(status: "PENDING") {
+              id
+              createdAt
+              page {
+                title
+                locale
+                path
+              }
+              creator {
+                name
+              }
+            }
+          }
+        }
+      `,
+      skip () {
+        return !this.isAuthenticated || !this.isAdmin
+      },
+      pollInterval: 30000,
+      fetchPolicy: 'network-only',
+      update: data => _.get(data, 'publicLinks.list', [])
     }
   }
 }

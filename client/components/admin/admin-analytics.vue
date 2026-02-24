@@ -134,7 +134,7 @@ export default {
       this.$store.commit('showNotification', {
         message: this.$t('admin:analytics.refreshSuccess'),
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async save() {
@@ -153,7 +153,7 @@ export default {
         this.$store.commit('showNotification', {
           message: this.$t('admin:analytics.saveSuccess'),
           style: 'success',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)

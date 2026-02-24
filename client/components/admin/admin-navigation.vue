@@ -420,7 +420,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('navigation.saveSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(_.get(resp, 'data.navigation.updateTree.responseResult.message', 'An unexpected error occurred.'))
@@ -436,7 +436,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Navigation has been refreshed.',
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     }
   },

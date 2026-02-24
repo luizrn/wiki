@@ -137,7 +137,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Page list has been refreshed.',
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     newpage() {

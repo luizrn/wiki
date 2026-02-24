@@ -55,6 +55,29 @@ type TBDCUpdateMutation {
     sidebarLinks: String
   ): DefaultResponse @auth(requires: ["manage:system"])
 
+  upsertCategory(
+    id: Int
+    name: String!
+    color: String
+    icon: String
+    showOnPublicPage: Boolean
+    order: Int
+  ): TBDCUpdateCategory @auth(requires: ["manage:system"])
+
+  deleteCategory(
+    id: Int!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
+  upsertTarget(
+    id: Int
+    name: String!
+    icon: String
+  ): TBDCUpdateTarget @auth(requires: ["manage:system"])
+
+  deleteTarget(
+    id: Int!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+
   submitVote(
     updateId: Int!
     rating: Int!

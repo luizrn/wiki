@@ -77,6 +77,9 @@
             v-list-item(to='/storage', color='primary')
               v-list-item-avatar(size='24', tile): v-icon mdi-harddisk
               v-list-item-title {{ $t('admin:storage.title') }}
+            v-list-item(to='/azure-devops-wiki', color='primary')
+              v-list-item-avatar(size='24', tile): v-icon mdi-microsoft-azure-devops
+              v-list-item-title Azure DevOps Wiki
           template(v-if='hasPermission([`manage:system`, `manage:api`])')
             v-divider.my-2
             v-subheader.pl-4 {{ $t('admin:nav.system') }}
@@ -183,6 +186,7 @@ const router = new VueRouter({
     { path: '/search', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-search.vue') },
     { path: '/notifications', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-notifications.vue') },
     { path: '/storage', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-storage.vue') },
+    { path: '/azure-devops-wiki', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-azure-devops-wiki.vue') },
     { path: '/api', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-api.vue') },
     { path: '/mail', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-mail.vue') },
     { path: '/security', component: () => import(/* webpackChunkName: "admin" */ './admin/admin-security.vue') },

@@ -1,4 +1,5 @@
 const { nanoid } = require('nanoid')
+const graphHelper = require('../../helpers/graph')
 
 /* global WIKI */
 
@@ -51,19 +52,11 @@ module.exports = {
         })
 
         return {
-          responseResult: {
-            succeeded: true,
-            message: 'Public link requested and pending approval.'
-          },
+          responseResult: graphHelper.generateSuccess('Public link requested and pending approval.'),
           link
         }
       } catch (err) {
-        return {
-          responseResult: {
-            succeeded: false,
-            message: err.message
-          }
-        }
+        return graphHelper.generateError(err)
       }
     },
     async approve(obj, args, context) {
@@ -73,15 +66,9 @@ module.exports = {
           approvedById: context.req.user.id
         }).findById(args.id)
 
-        return {
-          succeeded: true,
-          message: 'Public link approved.'
-        }
+        return { responseResult: graphHelper.generateSuccess('Public link approved.') }
       } catch (err) {
-        return {
-          succeeded: false,
-          message: err.message
-        }
+        return graphHelper.generateError(err)
       }
     },
     async reject(obj, args, context) {
@@ -90,15 +77,9 @@ module.exports = {
           status: 'REJECTED'
         }).findById(args.id)
 
-        return {
-          succeeded: true,
-          message: 'Public link rejected.'
-        }
+        return { responseResult: graphHelper.generateSuccess('Public link rejected.') }
       } catch (err) {
-        return {
-          succeeded: false,
-          message: err.message
-        }
+        return graphHelper.generateError(err)
       }
     },
     async revoke(obj, args, context) {
@@ -107,15 +88,9 @@ module.exports = {
           status: 'EXPIRED'
         }).findById(args.id)
 
-        return {
-          succeeded: true,
-          message: 'Public link revoked.'
-        }
+        return { responseResult: graphHelper.generateSuccess('Public link revoked.') }
       } catch (err) {
-        return {
-          succeeded: false,
-          message: err.message
-        }
+        return graphHelper.generateError(err)
       }
     }
   }

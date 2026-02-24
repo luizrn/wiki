@@ -171,7 +171,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'red',
           message: validationResults[0],
-          icon: 'alert'
+          icon: 'mdi-alert'
         })
         return
       }
@@ -196,7 +196,7 @@ export default {
           this.$store.commit('showNotification', {
             style: 'success',
             message: 'New user created successfully.',
-            icon: 'check'
+            icon: 'mdi-check'
           })
 
           this.email = ''
@@ -213,7 +213,7 @@ export default {
           this.$store.commit('showNotification', {
             style: 'red',
             message: _.get(resp, 'data.users.create.responseResult.message', 'An unexpected error occurred.'),
-            icon: 'alert'
+            icon: 'mdi-alert'
           })
         }
       } catch (err) {

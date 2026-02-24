@@ -9,14 +9,14 @@
             .subtitle-1.grey--text Configure the content editors #[v-chip(label, color='primary', small).white--text coming soon]
           v-spacer
           v-btn(outline, color='grey', @click='refresh', large)
-            v-icon refresh
+            v-icon mdi-refresh
           v-btn(color='success', @click='save', depressed, large)
-            v-icon(left) check
+            v-icon(left) mdi-check
             span {{$t('common:actions.apply')}}
 
         v-card.mt-3
           v-tabs(color='grey darken-2', fixed-tabs, slider-color='white', show-arrows, dark)
-            v-tab(key='settings'): v-icon settings
+            v-tab(key='settings'): v-icon mdi-cog
             v-tab(key='code') Markdown
 
             v-tab-item(key='settings', :transition='false', :reverse-transition='false')

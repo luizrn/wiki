@@ -358,6 +358,14 @@ router.get(['/novidades', '/novidades/*'], (req, res, next) => {
 })
 
 /**
+ * Status Page
+ */
+router.get(['/status', '/status/*'], (req, res, next) => {
+  _.set(res.locals, 'pageMeta.title', 'Status')
+  res.render('status')
+})
+
+/**
  * Source
  */
 router.get(['/s', '/s/*'], async (req, res, next) => {

@@ -221,13 +221,13 @@ export default {
         this.$store.commit('showNotification', {
           message: `Locale ${lc.name} has been installed successfully.`,
           style: 'success',
-          icon: 'get_app'
+          icon: 'mdi-download'
         })
       } else {
         this.$store.commit('showNotification', {
           message: `Error: ${resp.message}`,
           style: 'error',
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.isDownloading = false
@@ -256,7 +256,7 @@ export default {
         this.$store.commit('showNotification', {
           message: 'Locale settings updated successfully.',
           style: 'success',
-          icon: 'check'
+          icon: 'mdi-check'
         })
 
         _.delay(() => {
@@ -266,7 +266,7 @@ export default {
         this.$store.commit('showNotification', {
           message: `Error: ${resp.message}`,
           style: 'error',
-          icon: 'warning'
+          icon: 'mdi-alert'
         })
       }
       this.loading = false

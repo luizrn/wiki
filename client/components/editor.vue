@@ -280,9 +280,17 @@ export default {
       this.showProgressDialog('saving')
       this.isSaving = true
 
-      const saveTimeoutHandle = setTimeout(() => {
-        throw new Error('Save operation timed out.')
-      }, 30000)
+      const withTimeout = (promise, timeoutMs = 30000) => {
+        let timeoutHandle = null
+        const timeoutPromise = new Promise((resolve, reject) => {
+          timeoutHandle = setTimeout(() => {
+            reject(new Error('Save operation timed out.'))
+          }, timeoutMs)
+        })
+        return Promise.race([promise, timeoutPromise]).finally(() => {
+          clearTimeout(timeoutHandle)
+        })
+      }
 
       try {
         if (this.$store.get('editor/mode') === 'create') {
@@ -290,7 +298,7 @@ export default {
           // -> CREATE PAGE
           // --------------------------------------------
 
-          let resp = await this.$apollo.mutate({
+          let resp = await withTimeout(this.$apollo.mutate({
             mutation: gql`
               mutation (
                 $content: String!
@@ -348,14 +356,14 @@ export default {
               isPrivate: false,
               isPublished: this.$store.get('page/isPublished'),
               path: this.$store.get('page/path'),
-              publishEndDate: this.$store.get('page/publishEndDate') || '',
-              publishStartDate: this.$store.get('page/publishStartDate') || '',
+              publishEndDate: this.$store.get('page/publishEndDate') || null,
+              publishStartDate: this.$store.get('page/publishStartDate') || null,
               scriptCss: this.$store.get('page/scriptCss'),
               scriptJs: this.$store.get('page/scriptJs'),
               tags: this.$store.get('page/tags'),
               title: this.$store.get('page/title')
             }
-          })
+          }))
           resp = _.get(resp, 'data.pages.create', {})
           if (_.get(resp, 'responseResult.succeeded')) {
             this.checkoutDateActive = _.get(resp, 'page.updatedAt', this.checkoutDateActive)
@@ -377,7 +385,7 @@ export default {
           // -> UPDATE EXISTING PAGE
           // --------------------------------------------
 
-          const conflictResp = await this.$apollo.query({
+          const conflictResp = await withTimeout(this.$apollo.query({
             query: gql`
               query ($id: Int!, $checkoutDate: Date!) {
                 pages {
@@ -390,13 +398,13 @@ export default {
               id: this.pageId,
               checkoutDate: this.checkoutDateActive
             }
-          })
+          }))
           if (_.get(conflictResp, 'data.pages.checkConflicts', false)) {
             this.$root.$emit('save-conflict')
             throw new Error(this.$t('editor:conflict.warning'))
           }
 
-          let resp = await this.$apollo.mutate({
+          let resp = await withTimeout(this.$apollo.mutate({
             mutation: gql`
               mutation (
                 $id: Int!
@@ -453,14 +461,14 @@ export default {
               isPrivate: false,
               isPublished: this.$store.get('page/isPublished'),
               path: this.$store.get('page/path'),
-              publishEndDate: this.$store.get('page/publishEndDate') || '',
-              publishStartDate: this.$store.get('page/publishStartDate') || '',
+              publishEndDate: this.$store.get('page/publishEndDate') || null,
+              publishStartDate: this.$store.get('page/publishStartDate') || null,
               scriptCss: this.$store.get('page/scriptCss'),
               scriptJs: this.$store.get('page/scriptJs'),
               tags: this.$store.get('page/tags'),
               title: this.$store.get('page/title')
             }
-          })
+          }))
           resp = _.get(resp, 'data.pages.update', {})
           if (_.get(resp, 'responseResult.succeeded')) {
             this.checkoutDateActive = _.get(resp, 'page.updatedAt', this.checkoutDateActive)
@@ -489,13 +497,11 @@ export default {
           icon: 'warning'
         })
         if (rethrow === true) {
-          clearTimeout(saveTimeoutHandle)
           this.isSaving = false
           this.hideProgressDialog()
           throw err
         }
       }
-      clearTimeout(saveTimeoutHandle)
       this.isSaving = false
       this.hideProgressDialog()
     },

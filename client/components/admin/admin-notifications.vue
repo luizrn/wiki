@@ -174,7 +174,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Configurações de notificação salvas.',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -206,7 +206,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Email de teste enviado.',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -240,7 +240,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Teste enviado para Discord.',
-          icon: 'check'
+          icon: 'mdi-check'
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)

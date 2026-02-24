@@ -149,7 +149,7 @@ export default {
           this.$store.commit('showNotification', {
             message: 'Page Tree rebuilt successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)
@@ -220,13 +220,13 @@ export default {
           this.$store.commit('showNotification', {
             message: `Completed with ${failed} pages that failed to render. Check server logs for details.`,
             style: 'error',
-            icon: 'alert'
+            icon: 'mdi-alert'
           })
         } else {
           this.$store.commit('showNotification', {
             message: 'All pages have been rendered successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         }
       } catch (err) {
@@ -254,7 +254,7 @@ export default {
           this.$store.commit('showNotification', {
             message: `Migrated ${_.get(respRaw, 'data.pages.migrateToLocale.count', 0)} page(s) to target locale successfully.`,
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)
@@ -297,7 +297,7 @@ export default {
           this.$store.commit('showNotification', {
             message: `Purged history successfully.`,
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)

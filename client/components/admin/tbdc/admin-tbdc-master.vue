@@ -5,7 +5,7 @@ v-container(fluid, grid-list-lg)
       .admin-header
         v-icon.animated.fadeInUp(size='80', color='primary') mdi-database-edit-outline
         .admin-header-title
-          .headline.blue--text.text--darken-2.animated.fadeInLeft Dados Mestres TBDC
+          .headline.primary--text.animated.fadeInLeft Dados Mestres TBDC
           .subtitle-1.grey--text.animated.fadeInLeft.wait-p2s Gerencie Produtos, Módulos e Equipe (CS / Implantadores)
         v-spacer
         v-btn.animated.fadeInDown(color='primary', large, depressed, @click='refresh')
@@ -31,7 +31,12 @@ v-container(fluid, grid-list-lg)
                         v-icon mdi-plus
                     v-list(dense)
                       template(v-for='product in products')
-                        v-list-item(:key='product.id', @click='selectedProduct = product', :class='selectedProduct.id === product.id ? "blue lighten-5 blue--text text--darken-4" : ""')
+                        v-list-item(
+                          :key='product.id'
+                          @click='selectedProduct = product'
+                          :class='selectedProduct.id === product.id ? "primary--text font-weight-bold" : ""'
+                          :style='selectedProduct.id === product.id ? { backgroundColor: $vuetify.theme.dark ? "rgba(24, 86, 59, 0.30)" : "rgba(24, 86, 59, 0.10)" } : {}'
+                        )
                           v-list-item-content
                             v-list-item-title {{ product.name }}
                           v-list-item-action
@@ -64,13 +69,13 @@ v-container(fluid, grid-list-lg)
           v-card(flat, :class='$vuetify.theme.dark ? "grey darken-4" : "grey lighten-5"')
             v-card-text.pa-4
               .d-flex.mb-4
-                v-btn(color='success', depressed, @click='editStaff({})')
+                v-btn(color='primary', depressed, @click='editStaff({})')
                   v-icon(left) mdi-plus
                   span Adicionar Membro
               v-card(outlined)
                 v-data-table(:items='staff', :headers='staffHeaders', :loading='loading', hide-default-footer)
                   template(v-slot:item.role='{ item }')
-                    v-chip(small, :color='item.role === "CS" ? "purple" : "orange"', dark) {{ item.role }}
+                    v-chip(small, :color='item.role === "CS" ? "#9BC113" : "#18563B"', dark) {{ item.role }}
                   template(v-slot:item.actions='{ item }')
                     v-btn(icon, small, @click='editStaff(item)')
                       v-icon(small) mdi-pencil

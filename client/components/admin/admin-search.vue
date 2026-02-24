@@ -128,7 +128,7 @@ export default {
       this.$store.commit('showNotification', {
         message: this.$t('admin:search.listRefreshSuccess'),
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async save() {
@@ -148,7 +148,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('admin:search.configSaveSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(_.get(resp, 'data.search.updateSearchEngines.responseResult.message', this.$t('common:error.unexpected')))
@@ -168,7 +168,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('admin:search.indexRebuildSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(_.get(resp, 'data.search.rebuildIndex.responseResult.message', this.$t('common:error.unexpected')))

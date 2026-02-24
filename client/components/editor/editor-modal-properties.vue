@@ -22,7 +22,7 @@
         v-tab {{$t('editor:props.scheduling')}}
         v-tab(:disabled='!hasScriptPermission') {{$t('editor:props.scripts')}}
         v-tab(:disabled='!hasStylePermission') {{$t('editor:props.styles')}}
-        v-tab(v-if='pageId > 0') {{ $t('common:pageSelector.publicLink') !== 'common:pageSelector.publicLink' ? $t('common:pageSelector.publicLink') : 'Link Público' }}
+        v-tab(:disabled='pageId <= 0') Link Público
         v-tab-item(transition='fade-transition', reverse-transition='fade-transition')
           v-card-text.pt-5
             .overline.pb-5 {{$t('editor:props.pageInfo')}}
@@ -196,57 +196,28 @@
           .editor-props-codeeditor-hint
             .caption {{$t('editor:props.htmlHint')}}
 
-        //- v-tab-item(transition='fade-transition', reverse-transition='fade-transition')
-        //-   v-card-text
-        //-     .overline {{$t('editor:props.socialFeatures')}}
-        //-     v-switch(
-        //-       :label='$t(`editor:props.allowComments`)'
-        //-       v-model='isPublished'
-        //-       color='primary'
-        //-       :hint='$t(`editor:props.allowCommentsHint`)'
-        //-       persistent-hint
-        //-       inset
-        //-       )
-        //-     v-switch(
-        //-       :label='$t(`editor:props.allowRatings`)'
-        //-       v-model='isPublished'
-        //-       color='primary'
-        //-       :hint='$t(`editor:props.allowRatingsHint`)'
-        //-       persistent-hint
-        //-       disabled
-        //-       inset
-        //-       )
-        //-     v-switch(
-        //-       :label='$t(`editor:props.displayAuthor`)'
-        //-       v-model='isPublished'
-        //-       color='primary'
-        //-       :hint='$t(`editor:props.displayAuthorHint`)'
-        //-       persistent-hint
-        //-       inset
-        //-       )
-        //-     v-switch(
-        //-       :label='$t(`editor:props.displaySharingBar`)'
-        //-       v-model='isPublished'
-        //-       color='primary'
-        //-       :hint='$t(`editor:props.displaySharingBarHint`)'
-        //-       persistent-hint
-        //-       inset
-        //-       )
-
+        v-tab-item(:transition='false', :reverse-transition='false')
+          .editor-props-codeeditor-title
+            .overline {{$t('editor:props.css')}}
+          .editor-props-codeeditor
+            textarea(ref='codecss')
           .editor-props-codeeditor-hint
             .caption {{$t('editor:props.cssHint')}}
 
-        v-tab-item(transition='fade-transition', reverse-transition='fade-transition', v-if='pageId > 0')
+        v-tab-item(transition='fade-transition', reverse-transition='fade-transition')
           v-card-text.pt-5
             .overline.pb-2 {{ $t('common:pageSelector.publicAccessLink') !== 'common:pageSelector.publicAccessLink' ? $t('common:pageSelector.publicAccessLink') : 'Link de Acesso Público' }}
 
-            v-alert(v-if='!publicLink', type='info', text, outlined, icon='mdi-link-variant-plus')
+            v-alert(v-if='pageId <= 0', type='info', text, outlined, icon='mdi-content-save-alert-outline')
+              .body-2 Salve a página primeiro para solicitar um link público.
+
+            v-alert(v-else-if='!publicLink', type='info', text, outlined, icon='mdi-link-variant-plus')
               .body-2 Nenhum link público foi gerado para esta página ainda.
               v-btn.mt-3(color='primary', @click='requestPublicLink', :loading='requestingLink')
                 v-icon(left) mdi-plus
                 span Solicitar Link Público
 
-            v-card(v-else, outlined, flat, class='mb-5')
+            v-card(v-else-if='pageId > 0', outlined, flat, class='mb-5')
               v-list-item
                 v-list-item-content
                   v-list-item-overline Status: {{ publicLink.status }}
@@ -442,6 +413,10 @@ export default {
       })
     },
     async fetchPublicLink () {
+      if (this.pageId <= 0) {
+        this.publicLink = null
+        return
+      }
       try {
         const { data } = await this.$apollo.query({
           query: gql`
@@ -466,6 +441,9 @@ export default {
       }
     },
     async requestPublicLink () {
+      if (this.pageId <= 0) {
+        return
+      }
       this.requestingLink = true
       try {
         const { data } = await this.$apollo.mutate({

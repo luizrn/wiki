@@ -14,10 +14,10 @@
     v-toolbar(flat, color='grey darken-3', dark)
       v-spacer
       v-btn(outline, @click='clear')
-        v-icon(left) cancel_presentation
+        v-icon(left) mdi-cancel
         span Clear
       v-btn(outline, @click='close')
-        v-icon(left) close
+        v-icon(left) mdi-close
         span Close
 </template>
 
@@ -85,7 +85,7 @@ export default {
           self.$store.commit('showNotification', {
             style: 'red',
             message: error.message,
-            icon: 'warning'
+            icon: 'mdi-alert'
           })
         }
       })

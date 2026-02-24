@@ -341,7 +341,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'error',
           message: this.$t('admin:general.siteTitleInvalidChars'),
-          icon: 'alert'
+          icon: 'mdi-alert'
         })
         return
       }
@@ -435,7 +435,7 @@ export default {
         this.$store.commit('showNotification', {
           style: 'success',
           message: this.$t('admin:general.saveSuccess'),
-          icon: 'check'
+          icon: 'mdi-check'
         })
         this.siteTitle = this.config.title
         this.company = this.config.company

@@ -78,7 +78,7 @@ export default {
       //   this.$store.commit('showNotification', {
       //     style: 'success',
       //     message: 'Configuration saved successfully.',
-      //     icon: 'check'
+      //     icon: 'mdi-check'
       //   })
       // } catch (err) {
       //   this.$store.commit('pushGraphError', err)

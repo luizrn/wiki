@@ -124,7 +124,7 @@ export default {
       this.$store.commit('showNotification', {
         message: this.$t('admin:comments.listRefreshSuccess'),
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     async save() {
@@ -157,7 +157,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('admin:comments.configSaveSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(_.get(resp, 'data.comments.updateProviders.responseResult.message', this.$t('common:error.unexpected')))

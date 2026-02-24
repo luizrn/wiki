@@ -19,10 +19,10 @@ v-container(fluid, grid-list-lg)
         v-card-text
           v-layout(row, align-center, justify-space-around)
             v-flex.text-center
-              v-icon(color='green', size='40') mdi-emoticon-happy-outline
+              v-icon(color='primary', size='40') mdi-emoticon-happy-outline
               .display-1.mt-2 {{stats.happy || 0}}
             v-flex.text-center
-              v-icon(color='orange', size='40') mdi-emoticon-neutral-outline
+              v-icon(color='#9BC113', size='40') mdi-emoticon-neutral-outline
               .display-1.mt-2 {{stats.neutral || 0}}
             v-flex.text-center
               v-icon(color='red', size='40') mdi-emoticon-sad-outline
@@ -76,17 +76,40 @@ v-container(fluid, grid-list-lg)
           v-tab-item
             v-card(flat)
               v-card-text
-                .overline Categorias (Produtos)
+                .d-flex.align-center
+                  .overline Categorias (Produtos)
+                  v-spacer
+                  v-btn(small, color='primary', @click='openCategoryEditor()')
+                    v-icon(left, small) mdi-plus
+                    span Nova Categoria
                 v-list(dense)
                   v-list-item(v-for='cat in categories', :key='cat.id')
                     v-list-item-avatar(size='24', :color='cat.color', tile)
-                    v-list-item-content: v-list-item-title {{cat.name}}
+                      v-icon(small, dark) {{ cat.icon || 'mdi-tag' }}
+                    v-list-item-content
+                      v-list-item-title {{cat.name}}
+                      v-list-item-subtitle Ordem: {{cat.order || 0}} | Público: {{cat.showOnPublicPage ? 'Sim' : 'Não'}}
+                    v-list-item-action
+                      v-btn(icon, small, @click='openCategoryEditor(cat)')
+                        v-icon(small) mdi-pencil
+                      v-btn(icon, small, color='red', @click='deleteCategory(cat)')
+                        v-icon(small) mdi-delete
                 v-divider.my-4
-                .overline Público-Alvo (Recursos para...)
+                .d-flex.align-center
+                  .overline Público-Alvo (Recursos para...)
+                  v-spacer
+                  v-btn(small, color='primary', @click='openTargetEditor()')
+                    v-icon(left, small) mdi-plus
+                    span Novo Público-Alvo
                 v-list(dense)
                   v-list-item(v-for='target in targets', :key='target.id')
                     v-list-item-icon: v-icon {{target.icon}}
                     v-list-item-content: v-list-item-title {{target.name}}
+                    v-list-item-action
+                      v-btn(icon, small, @click='openTargetEditor(target)')
+                        v-icon(small) mdi-pencil
+                      v-btn(icon, small, color='red', @click='deleteTarget(target)')
+                        v-icon(small) mdi-delete
 
     //- EDITOR DIALOG
     v-dialog(v-model='isEditorOpen', fullscreen, transition='dialog-bottom-transition')
@@ -111,7 +134,40 @@ v-container(fluid, grid-list-lg)
                 v-select(label='Produto/Categoria', :items='categories', item-text='name', item-value='id', v-model='editItem.categoryId', outlined)
                 v-select(label='Público-Alvo', :items='targets', item-text='name', item-value='id', v-model='editItem.targetId', outlined)
                 v-textarea(label='Resumo Crítico (O que é o recurso?)', v-model='editItem.summary', outlined, rows='3')
-                v-switch(label='Publicado', v-model='editItem.isPublished', color='success')
+                v-switch(label='Publicado', v-model='editItem.isPublished', color='primary')
+
+    //- CATEGORY DIALOG
+    v-dialog(v-model='isCategoryEditorOpen', max-width='560')
+      v-card
+        v-card-title {{ categoryEdit.id ? 'Editar Categoria' : 'Nova Categoria' }}
+        v-card-text
+          v-text-field(v-model='categoryEdit.name', label='Nome', outlined, dense)
+          v-row
+            v-col(cols='6')
+              v-text-field(v-model='categoryEdit.color', label='Cor HEX', outlined, dense, placeholder='#18563B')
+            v-col(cols='6')
+              v-text-field(v-model='categoryEdit.icon', label='Ícone (MDI)', outlined, dense, placeholder='mdi-tag')
+          v-row
+            v-col(cols='6')
+              v-text-field(v-model.number='categoryEdit.order', type='number', label='Ordem', outlined, dense)
+            v-col(cols='6')
+              v-switch(v-model='categoryEdit.showOnPublicPage', label='Exibir no público', color='primary')
+        v-card-actions
+          v-spacer
+          v-btn(text, @click='isCategoryEditorOpen = false') Cancelar
+          v-btn(color='primary', @click='saveCategory') Salvar
+
+    //- TARGET DIALOG
+    v-dialog(v-model='isTargetEditorOpen', max-width='520')
+      v-card
+        v-card-title {{ targetEdit.id ? 'Editar Público-Alvo' : 'Novo Público-Alvo' }}
+        v-card-text
+          v-text-field(v-model='targetEdit.name', label='Nome', outlined, dense)
+          v-text-field(v-model='targetEdit.icon', label='Ícone (MDI)', outlined, dense, placeholder='mdi-account-group')
+        v-card-actions
+          v-spacer
+          v-btn(text, @click='isTargetEditorOpen = false') Cancelar
+          v-btn(color='primary', @click='saveTarget') Salvar
 
 </template>
 
@@ -134,6 +190,21 @@ export default {
       },
       isEditorOpen: false,
       editorMode: 'create',
+      isCategoryEditorOpen: false,
+      isTargetEditorOpen: false,
+      categoryEdit: {
+        id: null,
+        name: '',
+        color: '#18563B',
+        icon: 'mdi-tag',
+        order: 0,
+        showOnPublicPage: true
+      },
+      targetEdit: {
+        id: null,
+        name: '',
+        icon: 'mdi-account-group'
+      },
       editItem: {
         title: '',
         content: '',
@@ -161,9 +232,12 @@ export default {
           query: gql`query {
             tbdcUpdates {
               listUpdates(limit: 100) { items { id title content summary categoryId category { name color } isPublished publishedAt updatedAt } }
-              categories { id name color icon }
+              categories { id name color icon showOnPublicPage order }
               targets { id name icon }
               adminConfig { responsibleUserId sidebarLinks }
+            }
+            users {
+              list(orderBy: "name") { id name isActive isSystem }
             }
           }`,
           fetchPolicy: 'network-only'
@@ -172,11 +246,15 @@ export default {
         this.categories = resp.data.tbdcUpdates.categories
         this.targets = resp.data.tbdcUpdates.targets
         this.config = resp.data.tbdcUpdates.adminConfig
+        this.staff = (resp.data.users.list || []).filter(u => u.isActive && !u.isSystem).map(u => ({
+          id: u.id,
+          name: u.name
+        }))
 
         // Simulação de stats p/ demonstração
         this.stats = { happy: 12, neutral: 4, sad: 1 }
       } catch (err) {
-        this.$store.commit('showError', err.message)
+        this.$store.commit('pushGraphError', err)
       }
       this.loading = false
     },
@@ -184,6 +262,121 @@ export default {
       this.editItem = { ...item }
       this.editorMode = 'edit'
       this.isEditorOpen = true
+    },
+    openCategoryEditor(cat = null) {
+      if (cat) {
+        this.categoryEdit = {
+          id: cat.id,
+          name: cat.name || '',
+          color: cat.color || '#18563B',
+          icon: cat.icon || 'mdi-tag',
+          order: cat.order || 0,
+          showOnPublicPage: cat.showOnPublicPage !== false
+        }
+      } else {
+        this.categoryEdit = {
+          id: null,
+          name: '',
+          color: '#18563B',
+          icon: 'mdi-tag',
+          order: (this.categories || []).length,
+          showOnPublicPage: true
+        }
+      }
+      this.isCategoryEditorOpen = true
+    },
+    async saveCategory() {
+      try {
+        await this.$apollo.mutate({
+          mutation: gql`mutation($id:Int,$name:String!,$color:String,$icon:String,$showOnPublicPage:Boolean,$order:Int){
+            tbdcUpdates {
+              upsertCategory(id:$id,name:$name,color:$color,icon:$icon,showOnPublicPage:$showOnPublicPage,order:$order){ id }
+            }
+          }`,
+          variables: {
+            id: this.categoryEdit.id,
+            name: this.categoryEdit.name,
+            color: this.categoryEdit.color,
+            icon: this.categoryEdit.icon,
+            showOnPublicPage: this.categoryEdit.showOnPublicPage,
+            order: this.categoryEdit.order
+          }
+        })
+        this.isCategoryEditorOpen = false
+        await this.refresh()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    async deleteCategory(cat) {
+      if (!confirm(`Deseja excluir a categoria "${cat.name}"?`)) {
+        return
+      }
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`mutation($id:Int!){ tbdcUpdates { deleteCategory(id:$id){ responseResult { succeeded message } } } }`,
+          variables: { id: cat.id }
+        })
+        if (!resp.data.tbdcUpdates.deleteCategory.responseResult.succeeded) {
+          throw new Error(resp.data.tbdcUpdates.deleteCategory.responseResult.message || 'Falha ao excluir categoria.')
+        }
+        await this.refresh()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    openTargetEditor(target = null) {
+      if (target) {
+        this.targetEdit = {
+          id: target.id,
+          name: target.name || '',
+          icon: target.icon || 'mdi-account-group'
+        }
+      } else {
+        this.targetEdit = {
+          id: null,
+          name: '',
+          icon: 'mdi-account-group'
+        }
+      }
+      this.isTargetEditorOpen = true
+    },
+    async saveTarget() {
+      try {
+        await this.$apollo.mutate({
+          mutation: gql`mutation($id:Int,$name:String!,$icon:String){
+            tbdcUpdates {
+              upsertTarget(id:$id,name:$name,icon:$icon){ id }
+            }
+          }`,
+          variables: {
+            id: this.targetEdit.id,
+            name: this.targetEdit.name,
+            icon: this.targetEdit.icon
+          }
+        })
+        this.isTargetEditorOpen = false
+        await this.refresh()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
+    },
+    async deleteTarget(target) {
+      if (!confirm(`Deseja excluir o público-alvo "${target.name}"?`)) {
+        return
+      }
+      try {
+        const resp = await this.$apollo.mutate({
+          mutation: gql`mutation($id:Int!){ tbdcUpdates { deleteTarget(id:$id){ responseResult { succeeded message } } } }`,
+          variables: { id: target.id }
+        })
+        if (!resp.data.tbdcUpdates.deleteTarget.responseResult.succeeded) {
+          throw new Error(resp.data.tbdcUpdates.deleteTarget.responseResult.message || 'Falha ao excluir público-alvo.')
+        }
+        await this.refresh()
+      } catch (err) {
+        this.$store.commit('pushGraphError', err)
+      }
     },
     async savePost() {
       try {
@@ -209,7 +402,7 @@ export default {
         await this.refresh()
         this.$store.commit('showSuccess', 'Novidade salva com sucesso!')
       } catch (err) {
-        this.$store.commit('showError', err.message)
+        this.$store.commit('pushGraphError', err)
       }
     },
     async deletePost(item) {
@@ -225,7 +418,7 @@ export default {
           })
           await this.refresh()
         } catch (err) {
-          this.$store.commit('showError', err.message)
+          this.$store.commit('pushGraphError', err)
         }
       }
     },
@@ -244,7 +437,7 @@ export default {
         })
         this.$store.commit('showSuccess', 'Configurações salvas!')
       } catch (err) {
-        this.$store.commit('showError', err.message)
+        this.$store.commit('pushGraphError', err)
       }
     }
   }

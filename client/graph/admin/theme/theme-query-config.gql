@@ -9,8 +9,15 @@ query {
       injectHead
       injectBody
       primaryColor
+      secondaryColor
       headerColor
       footerColor
+      successColor
+      warningColor
+      errorColor
+      infoColor
+      neutralColor
+      chatEnabled
     }
   }
 }

@@ -262,7 +262,7 @@ export default {
       this.$store.commit('showNotification', {
         message: this.$t('admin:auth.refreshSuccess'),
         style: 'success',
-        icon: 'cached'
+        icon: 'mdi-cached'
       })
     },
     addStrategy (str) {
@@ -327,7 +327,7 @@ export default {
           this.$store.commit('showNotification', {
             message: this.$t('admin:auth.saveSuccess'),
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(_.get(resp, 'data.authentication.updateStrategies.responseResult.message', this.$t('common:error.unexpected')))

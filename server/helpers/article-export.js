@@ -259,10 +259,15 @@ async function generatePdf (page) {
   doc.on('data', c => chunks.push(c))
 
   const writeFooter = () => {
+    doc.save()
     doc.fontSize(8).fillColor('#666666')
-    doc.text(FOOTER_TEXT, 48, doc.page.height - 46, { width: doc.page.width - 96, align: 'center' })
+    doc.text(FOOTER_TEXT, 48, doc.page.height - 34, {
+      width: doc.page.width - 96,
+      align: 'center',
+      lineBreak: false
+    })
+    doc.restore()
   }
-  doc.on('pageAdded', writeFooter)
 
   doc.rect(0, 0, doc.page.width, 130).fill('#0B3D91')
   doc.fillColor('#FFFFFF').fontSize(30).text('TBDC', 48, 38)

@@ -5,7 +5,7 @@ v-container(fluid, grid-list-lg)
       .admin-header
         v-icon.animated.fadeInUp(size='80', color='primary') mdi-shield-account-outline
         .admin-header-title
-          .headline.blue--text.text--darken-2.animated.fadeInLeft Consultar Permissões TBDC
+          .headline.primary--text.animated.fadeInLeft Consultar Permissões TBDC
           .subtitle-1.grey--text.animated.fadeInLeft.wait-p2s Pesquise o que cada empresa pode ou não fazer
         v-spacer
         v-btn.animated.fadeInDown.wait-p2s.mr-3(outlined, color='grey', icon, @click='refresh')
@@ -110,10 +110,10 @@ export default {
       ],
       levels: {
         GREEN: { short: 'LIVRE', color: 'green', full: 'Suporte tem permissão' },
-        BLUE: { short: 'AUTORIZADO', color: 'blue', full: 'Sim, mas com autorização do focal' },
+        BLUE: { short: 'AUTORIZADO', color: '#18563B', full: 'Sim, mas com autorização do focal' },
         PURPLE: { short: 'SOMENTE CS', color: 'purple', full: 'Somente o CS tem permissão' },
-        YELLOW: { short: 'CONSULTAR CS', color: 'yellow darken-3', full: 'Somente após consulta com CS' },
-        ORANGE: { short: 'DEPENDE', color: 'orange darken-3', full: 'Com alguma regra sobre algum parâmetro' },
+        YELLOW: { short: 'CONSULTAR CS', color: '#7A980F', full: 'Somente após consulta com CS' },
+        ORANGE: { short: 'DEPENDE', color: '#9BC113', full: 'Com alguma regra sobre algum parâmetro' },
         RED: { short: 'PROIBIDO', color: 'red', full: 'Não permitido ou não informado' },
         BLACK: { short: 'NÃO UTILIZA', color: 'black', full: 'Não utiliza este produto' }
       }

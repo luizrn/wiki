@@ -75,10 +75,13 @@ export default {
   methods: {
     async approveLink(id) {
       try {
-        await this.$apollo.mutate({
-          mutation: gql`mutation ($id: Int!) { publicLinks { approve(id: $id) { succeeded message } } }`,
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`mutation ($id: Int!) { publicLinks { approve(id: $id) { responseResult { succeeded message } } } }`,
           variables: { id }
         })
+        if (!data.publicLinks.approve.responseResult.succeeded) {
+          throw new Error(data.publicLinks.approve.responseResult.message || 'Falha ao aprovar link público.')
+        }
         this.$apollo.queries.publicLinks.refresh()
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -86,10 +89,13 @@ export default {
     },
     async rejectLink(id) {
       try {
-        await this.$apollo.mutate({
-          mutation: gql`mutation ($id: Int!) { publicLinks { reject(id: $id) { succeeded message } } }`,
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`mutation ($id: Int!) { publicLinks { reject(id: $id) { responseResult { succeeded message } } } }`,
           variables: { id }
         })
+        if (!data.publicLinks.reject.responseResult.succeeded) {
+          throw new Error(data.publicLinks.reject.responseResult.message || 'Falha ao rejeitar link público.')
+        }
         this.$apollo.queries.publicLinks.refresh()
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -97,10 +103,13 @@ export default {
     },
     async revokeLink(id) {
       try {
-        await this.$apollo.mutate({
-          mutation: gql`mutation ($id: Int!) { publicLinks { revoke(id: $id) { succeeded message } } }`,
+        const { data } = await this.$apollo.mutate({
+          mutation: gql`mutation ($id: Int!) { publicLinks { revoke(id: $id) { responseResult { succeeded message } } } }`,
           variables: { id }
         })
+        if (!data.publicLinks.revoke.responseResult.succeeded) {
+          throw new Error(data.publicLinks.revoke.responseResult.message || 'Falha ao revogar link público.')
+        }
         this.$apollo.queries.publicLinks.refresh()
       } catch (err) {
         this.$store.commit('pushGraphError', err)
@@ -112,7 +121,7 @@ export default {
       this.$store.commit('showNotification', {
         message: 'Link copiado para a área de transferência!',
         style: 'success',
-        icon: 'check'
+        icon: 'mdi-check'
       })
     }
   },
@@ -129,6 +138,7 @@ export default {
               createdAt
               page {
                 title
+                locale
                 path
               }
               creator {

@@ -16,13 +16,16 @@ module.exports = {
         .withGraphJoined('[category, target]')
         .orderBy('publishedAt', 'DESC')
         .orderBy('createdAt', 'DESC')
+      const countQuery = WIKI.models.tbdcUpdates.query()
 
       if (args.categoryId) {
         query.where('categoryId', args.categoryId)
+        countQuery.where('categoryId', args.categoryId)
       }
 
       if (!args.isAdmin) {
         query.where('isPublished', true)
+        countQuery.where('isPublished', true)
       }
 
       if (args.limit) {
@@ -33,11 +36,11 @@ module.exports = {
       }
 
       const items = await query
-      const total = await WIKI.models.tbdcUpdates.query().count('id as count').first()
+      const total = await countQuery.count('id as count').first()
 
       return {
         items,
-        total: total.count
+        total: _.toSafeInteger(total.count)
       }
     },
     async getUpdate(obj, args) {
@@ -45,8 +48,9 @@ module.exports = {
     },
     async adminConfig() {
       const config = await WIKI.models.knex('tbdc_update_config').select()
+      const responsibleUserId = _.toSafeInteger(_.get(_.find(config, { key: 'responsibleUserId' }), 'value', 1))
       return {
-        responsibleUserId: _.get(_.find(config, { key: 'responsibleUserId' }), 'value', 1),
+        responsibleUserId: responsibleUserId > 0 ? responsibleUserId : 1,
         sidebarLinks: _.get(_.find(config, { key: 'sidebarLinks' }), 'value', '[]')
       }
     },
@@ -96,13 +100,74 @@ module.exports = {
     },
     async saveConfig(obj, args) {
       try {
-        if (args.responsibleUserId) {
+        if (!_.isNil(args.responsibleUserId)) {
           await WIKI.models.knex('tbdc_update_config').where('key', 'responsibleUserId').update({ value: args.responsibleUserId.toString() })
         }
-        if (args.sidebarLinks) {
+        if (!_.isNil(args.sidebarLinks)) {
           await WIKI.models.knex('tbdc_update_config').where('key', 'sidebarLinks').update({ value: args.sidebarLinks })
         }
         return graphHelper.generateSuccess('Configuration saved successfully.')
+      } catch (err) {
+        return graphHelper.generateError(err)
+      }
+    },
+    async upsertCategory(obj, args) {
+      try {
+        const payload = {
+          name: _.trim(args.name),
+          color: _.trim(args.color || '#18563B'),
+          icon: _.trim(args.icon || 'mdi-tag'),
+          showOnPublicPage: _.isBoolean(args.showOnPublicPage) ? args.showOnPublicPage : true,
+          order: _.isInteger(args.order) ? args.order : 0
+        }
+        if (_.isEmpty(payload.name)) {
+          throw new Error('Nome da categoria é obrigatório.')
+        }
+        if (args.id) {
+          return WIKI.models.tbdcUpdateCategories.query().patchAndFetchById(args.id, payload)
+        }
+        return WIKI.models.tbdcUpdateCategories.query().insertAndFetch(payload)
+      } catch (err) {
+        throw err
+      }
+    },
+    async deleteCategory(obj, args) {
+      try {
+        const inUse = await WIKI.models.tbdcUpdates.query().where('categoryId', args.id).count('id as total').first()
+        if (_.toSafeInteger(_.get(inUse, 'total', 0)) > 0) {
+          throw new Error('Não é possível excluir: categoria em uso por postagens.')
+        }
+        await WIKI.models.tbdcUpdateCategories.query().deleteById(args.id)
+        return graphHelper.generateSuccess('Categoria removida com sucesso.')
+      } catch (err) {
+        return graphHelper.generateError(err)
+      }
+    },
+    async upsertTarget(obj, args) {
+      try {
+        const payload = {
+          name: _.trim(args.name),
+          icon: _.trim(args.icon || 'mdi-account-group')
+        }
+        if (_.isEmpty(payload.name)) {
+          throw new Error('Nome do público-alvo é obrigatório.')
+        }
+        if (args.id) {
+          return WIKI.models.tbdcUpdateTargets.query().patchAndFetchById(args.id, payload)
+        }
+        return WIKI.models.tbdcUpdateTargets.query().insertAndFetch(payload)
+      } catch (err) {
+        throw err
+      }
+    },
+    async deleteTarget(obj, args) {
+      try {
+        const inUse = await WIKI.models.tbdcUpdates.query().where('targetId', args.id).count('id as total').first()
+        if (_.toSafeInteger(_.get(inUse, 'total', 0)) > 0) {
+          throw new Error('Não é possível excluir: público-alvo em uso por postagens.')
+        }
+        await WIKI.models.tbdcUpdateTargets.query().deleteById(args.id)
+        return graphHelper.generateSuccess('Público-alvo removido com sucesso.')
       } catch (err) {
         return graphHelper.generateError(err)
       }

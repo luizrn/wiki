@@ -66,27 +66,69 @@
                   v-divider.mt-3
                   .subtitle-2.mb-2 Custom Colors
                   v-layout(row wrap)
-                    v-flex(xs4)
+                    v-flex(xs6, md4)
                       v-text-field(v-model='config.primaryColor', label='Primary Color', dense, outlined, hide-details)
                         template(v-slot:append)
                           v-menu(offset-y, :close-on-content-click='false')
                             template(v-slot:activator='{ on }')
                               div(:style='{ backgroundColor: config.primaryColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
                             v-color-picker(v-model='config.primaryColor', flat)
-                    v-flex(xs4)
+                    v-flex(xs6, md4)
+                      v-text-field(v-model='config.secondaryColor', label='Secondary Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.secondaryColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.secondaryColor', flat)
+                    v-flex(xs6, md4)
                       v-text-field(v-model='config.headerColor', label='Header Color', dense, outlined, hide-details)
                         template(v-slot:append)
                           v-menu(offset-y, :close-on-content-click='false')
                             template(v-slot:activator='{ on }')
                               div(:style='{ backgroundColor: config.headerColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
                             v-color-picker(v-model='config.headerColor', flat)
-                    v-flex(xs4)
+                    v-flex(xs6, md4)
                       v-text-field(v-model='config.footerColor', label='Footer Color', dense, outlined, hide-details)
                         template(v-slot:append)
                           v-menu(offset-y, :close-on-content-click='false')
                             template(v-slot:activator='{ on }')
                               div(:style='{ backgroundColor: config.footerColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
                             v-color-picker(v-model='config.footerColor', flat)
+                    v-flex(xs6, md4)
+                      v-text-field(v-model='config.successColor', label='Success Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.successColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.successColor', flat)
+                    v-flex(xs6, md4)
+                      v-text-field(v-model='config.warningColor', label='Warning Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.warningColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.warningColor', flat)
+                    v-flex(xs6, md4)
+                      v-text-field(v-model='config.errorColor', label='Error Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.errorColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.errorColor', flat)
+                    v-flex(xs6, md4)
+                      v-text-field(v-model='config.infoColor', label='Info Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.infoColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.infoColor', flat)
+                    v-flex(xs6, md4)
+                      v-text-field(v-model='config.neutralColor', label='Neutral Color', dense, outlined, hide-details)
+                        template(v-slot:append)
+                          v-menu(offset-y, :close-on-content-click='false')
+                            template(v-slot:activator='{ on }')
+                              div(:style='{ backgroundColor: config.neutralColor, width: "24px", height: "24px", cursor: "pointer", border: "1px solid #ccc" }', v-on='on')
+                            v-color-picker(v-model='config.neutralColor', flat)
                   v-switch.mt-3(
                     inset
                     v-model='config.chatEnabled'
@@ -169,7 +211,7 @@ export default {
     return {
       loading: false,
       themes: [
-        { text: 'Default', author: 'requarks.io', value: 'default', isInstalled: true, installDate: '', updatedAt: '' }
+        { text: 'TBDC THEME', author: 'requarks.io', value: 'default', isInstalled: true, installDate: '', updatedAt: '' }
       ],
       iconsets: [
         { text: 'Material Design Icons (default)', value: 'mdi' },
@@ -184,9 +226,15 @@ export default {
         injectCSS: '',
         injectHead: '',
         injectBody: '',
-        primaryColor: '#1976d2',
-        headerColor: '#212121',
-        footerColor: '#212121',
+        primaryColor: '#18563B',
+        secondaryColor: '#9BC113',
+        headerColor: '#18563B',
+        footerColor: '#18563B',
+        successColor: '#18563B',
+        warningColor: '#9BC113',
+        errorColor: '#D32F2F',
+        infoColor: '#18563B',
+        neutralColor: '#90A4AE',
         chatEnabled: true
       },
       darkModeInitial: false
@@ -251,18 +299,26 @@ export default {
             injectHead: this.config.injectHead,
             injectBody: this.config.injectBody,
             primaryColor: this.config.primaryColor,
+            secondaryColor: this.config.secondaryColor,
             headerColor: this.config.headerColor,
             footerColor: this.config.footerColor,
+            successColor: this.config.successColor,
+            warningColor: this.config.warningColor,
+            errorColor: this.config.errorColor,
+            infoColor: this.config.infoColor,
+            neutralColor: this.config.neutralColor,
             chatEnabled: this.config.chatEnabled
           }
         })
         const resp = _.get(respRaw, 'data.theming.setConfig.responseResult', {})
         if (resp.succeeded) {
+          this.$store.commit('site/SET_CHAT_ENABLED', this.config.chatEnabled)
+          await this.$apollo.queries.config.refetch()
           this.darkModeInitial = this.darkMode
           this.$store.commit('showNotification', {
             message: 'Theme settings updated successfully.',
             style: 'success',
-            icon: 'check'
+            icon: 'mdi-check'
           })
         } else {
           throw new Error(resp.message)

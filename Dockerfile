@@ -5,6 +5,7 @@ FROM node:20-alpine AS assets
 
 ENV CYPRESS_INSTALL_BINARY=0
 ENV NODE_OPTIONS=--openssl-legacy-provider
+ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 
 RUN apk add --no-cache yarn g++ make cmake python3
 
@@ -27,6 +28,11 @@ COPY dev ./dev
 RUN node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider \
     node ./node_modules/.bin/webpack --profile --config dev/webpack/webpack.prod.js
 
+# Reduce final runtime footprint and avoid double dependency installs in parallel stages.
+RUN yarn --production --non-interactive && \
+    yarn cache clean && \
+    rm -rf /tmp/.yarn-cache
+
 # ============================================================
 # Stage 2: Production image
 # ============================================================
@@ -43,16 +49,9 @@ WORKDIR /wiki
 
 COPY patches ./patches
 COPY package.json ./
-COPY yarn.lock ./
-COPY .npmrc ./
-
-RUN apk add --no-cache yarn && \
-    yarn --production --non-interactive && \
-    npm install -g patch-package && \
-    npx patch-package && \
-    yarn cache clean
 
 COPY --from=assets /wiki/assets ./assets
+COPY --from=assets /wiki/node_modules ./node_modules
 COPY server ./server
 COPY --from=assets /wiki/server/views/master.pug ./server/views/master.pug
 COPY --from=assets /wiki/server/views/setup.pug ./server/views/setup.pug

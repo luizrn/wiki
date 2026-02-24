@@ -28,7 +28,7 @@ class TBDCUpdate extends Model {
     return {
       author: {
         relation: Model.BelongsToOneRelation,
-        modelClass: require('../user'),
+        modelClass: require('../users'),
         join: {
           from: 'tbdc_updates.authorId',
           to: 'users.id'

@@ -57,7 +57,7 @@ type PageQuery {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
-    filterUpdates: Boolean!
+    filterUpdates: Boolean
   ): Page @auth(requires: ["read:pages", "manage:system"])
 
   tags: [PageTag]! @auth(requires: ["manage:system", "read:pages"])
@@ -73,7 +73,7 @@ type PageQuery {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
-    filterUpdates: Boolean!
+    filterUpdates: Boolean
     includeAncestors: Boolean
   ): [PageTreeItem] @auth(requires: ["manage:system", "read:pages"])
 
@@ -81,7 +81,7 @@ type PageQuery {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
-    filterUpdates: Boolean!
+    filterUpdates: Boolean
   ): [PageLinkItem] @auth(requires: ["manage:system", "read:pages"])
 
   checkConflicts(
@@ -108,7 +108,7 @@ type PageMutation {
     locale: String
     filterPermissions: Boolean
     filterPages: Boolean
-    filterUpdates: Boolean!
+    filterUpdates: Boolean
     path: String!
     publishEndDate: Date
     publishStartDate: Date
@@ -146,10 +146,10 @@ type PageMutation {
   move(
     id: Int!
     destinationPath: String!
-    destinationlocale: String
+    destinationLocale: String
     filterPermissions: Boolean
     filterPages: Boolean
-    filterUpdates: Boolean!
+    filterUpdates: Boolean
   ): DefaultResponse @auth(requires: ["manage:pages", "manage:system"])
 
   delete(
@@ -169,14 +169,11 @@ type PageMutation {
   flushCache: DefaultResponse @auth(requires: ["manage:system"])
 
   migrateToLocale(
-    sourcelocale: String
+    sourceLocale: String
+    targetLocale: String
     filterPermissions: Boolean
     filterPages: Boolean
-    filterUpdates: Boolean!
-    targetlocale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+    filterUpdates: Boolean
   ): PageMigrationResponse @auth(requires: ["manage:system"])
 
   rebuildTree: DefaultResponse @auth(requires: ["manage:system"])
@@ -190,7 +187,7 @@ type PageMutation {
     versionId: Int!
   ): DefaultResponse @auth(requires: ["write:pages", "manage:pages", "manage:system"])
 
-  purgeHistory (
+  purgeHistory(
     olderThan: String!
   ): DefaultResponse @auth(requires: ["manage:system"])
 }
@@ -229,9 +226,7 @@ type Page {
   updatedAt: Date!
   editor: String! @auth(requires: ["write:pages", "manage:system"])
   locale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+  localeCode: String
   scriptCss: String
   scriptJs: String
   authorId: Int! @auth(requires: ["write:pages", "manage:system"])
@@ -273,9 +268,7 @@ type PageVersion {
   isPrivate: Boolean!
   isPublished: Boolean!
   locale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+  localeCode: String
   pageId: Int!
   path: String!
   publishEndDate: Date!
@@ -302,18 +295,14 @@ type PageSearchResult {
   description: String!
   path: String!
   locale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+  localeCode: String
 }
 
 type PageListItem {
   id: Int!
   path: String!
   locale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+  localeCode: String
   title: String
   description: String
   contentType: String!
@@ -336,9 +325,7 @@ type PageTreeItem {
   parent: Int
   pageId: Int
   locale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+  localeCode: String
 }
 
 type PageLinkItem {
@@ -357,9 +344,7 @@ type PageConflictLatest {
   description: String!
   isPublished: Boolean!
   locale: String
-    filterPermissions: Boolean
-    filterPages: Boolean
-    filterUpdates: Boolean!
+  localeCode: String
   path: String!
   tags: [String]
   title: String!

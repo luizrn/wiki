@@ -45,7 +45,7 @@ v-container(fluid, grid-list-lg)
             v-model='importForm.wiki'
             :items='wikis'
             item-text='name'
-            item-value='name'
+            item-value='id'
             label='Wiki'
             outlined
             dense
@@ -94,6 +94,13 @@ const QUERY_CONFIG = gql`
         targetBasePath
         lastSyncAt
       }
+    }
+  }
+`
+
+const QUERY_PROJECTS = gql`
+  query {
+    azureDevOpsWiki {
       projects {
         id
         name
@@ -237,7 +244,6 @@ export default {
     async refreshConfig () {
       const resp = await this.$apollo.query({ query: QUERY_CONFIG, fetchPolicy: 'network-only' })
       this.config = _.get(resp, 'data.azureDevOpsWiki.config')
-      this.projects = _.get(resp, 'data.azureDevOpsWiki.projects', [])
       if (this.config) {
         this.form = {
           enabled: this.config.enabled,
@@ -252,13 +258,34 @@ export default {
         this.importForm.wiki = this.importForm.wiki || this.config.defaultWiki || ''
         this.importForm.locale = this.importForm.locale || this.config.defaultLocale || 'en'
         this.importForm.targetBasePath = this.config.targetBasePath || 'azure-devops'
+        await this.loadProjects()
         if (this.importForm.project) {
           await this.loadWikis()
         }
       }
     },
+    async loadProjects () {
+      if (!this.config || !this.config.organization || !this.config.hasPAT) {
+        this.projects = []
+        this.wikis = []
+        return
+      }
+      try {
+        const resp = await this.$apollo.query({
+          query: QUERY_PROJECTS,
+          fetchPolicy: 'network-only'
+        })
+        this.projects = _.get(resp, 'data.azureDevOpsWiki.projects', [])
+      } catch (err) {
+        this.projects = []
+        this.$store.commit('pushGraphError', err)
+      }
+    },
     async loadWikis () {
-      if (!this.importForm.project) return
+      if (!this.importForm.project || !this.config || !this.config.hasPAT) {
+        this.wikis = []
+        return
+      }
       const resp = await this.$apollo.query({
         query: QUERY_WIKIS,
         fetchPolicy: 'network-only',
@@ -267,6 +294,20 @@ export default {
         }
       })
       this.wikis = _.get(resp, 'data.azureDevOpsWiki.wikis', [])
+      if (this.importForm.wiki) {
+        const selected = _.find(this.wikis, w =>
+          w.id === this.importForm.wiki ||
+          _.toLower(w.name) === _.toLower(this.importForm.wiki)
+        )
+        this.importForm.wiki = selected ? selected.id : ''
+        if (!selected) {
+          this.$store.commit('showNotification', {
+            style: 'warning',
+            message: 'Wiki padrão não encontrada neste projeto. Selecione uma wiki válida para importar.',
+            icon: 'mdi-alert'
+          })
+        }
+      }
     },
     async saveConfig () {
       this.saving = true
@@ -282,6 +323,13 @@ export default {
             icon: 'mdi-check'
           })
           await this.refreshConfig()
+          if (!this.config.hasPAT) {
+            this.$store.commit('showNotification', {
+              style: 'warning',
+              message: 'Configuração salva. Informe o Token de API (PAT) para listar projetos e importar.',
+              icon: 'mdi-alert'
+            })
+          }
         } else {
           throw new Error(_.get(resp, 'data.azureDevOpsWiki.saveConfig.responseResult.message', 'Falha ao salvar configuração.'))
         }

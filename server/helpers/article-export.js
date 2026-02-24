@@ -9,13 +9,16 @@ const PptxGenJS = require('pptxgenjs')
 const removeMd = require('remove-markdown')
 const cheerio = require('cheerio')
 
-const FOOTER_TEXT = 'TODOS OS CONTEÚDOS SÃO RESTRITO - CONFIDÊNCIAL - USO INTERNO DA TBDC🔴'
+const FOOTER_TEXT = 'TODOS OS CONTEUDOS SAO RESTRITOS - CONFIDENCIAL - USO INTERNO DA TBDC'
 const PPTX_THEME = {
-  bg: 'F4F6FA',
-  dark: '0E1A2B',
-  accent: 'D32F2F',
-  accentSoft: 'FFCDD2',
-  text: '263238',
+  bg: 'F3F8F4',
+  dark: '18563B',
+  accent: '9BC113',
+  accentSoft: 'DCEBB0',
+  text: '1F2D27',
+  muted: 'CFE3D8',
+  line: 'B8D3C5',
+  panel: '1D6B49',
   white: 'FFFFFF'
 }
 const PPTX_FONT_TITLE = 'Calibri'
@@ -123,19 +126,19 @@ function buildCorporateCoverBackgroundDataUri () {
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0E1A2B"/>
-      <stop offset="100%" stop-color="#1A2D4A"/>
+      <stop offset="0%" stop-color="#18563B"/>
+      <stop offset="100%" stop-color="#1D6B49"/>
     </linearGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#D32F2F" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#9A2020" stop-opacity="0.95"/>
+      <stop offset="0%" stop-color="#9BC113" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#7A980F" stop-opacity="0.95"/>
     </linearGradient>
   </defs>
   <rect width="1600" height="900" fill="url(#bg)"/>
   <rect x="0" y="0" width="1600" height="120" fill="url(#accent)"/>
   <circle cx="1320" cy="640" r="280" fill="#FFFFFF" fill-opacity="0.04"/>
   <circle cx="1420" cy="720" r="180" fill="#FFFFFF" fill-opacity="0.05"/>
-  <path d="M0,760 C420,640 940,860 1600,700 L1600,900 L0,900 Z" fill="#D32F2F" fill-opacity="0.16"/>
+  <path d="M0,760 C420,640 940,860 1600,700 L1600,900 L0,900 Z" fill="#9BC113" fill-opacity="0.16"/>
   <path d="M0,810 C500,690 1020,910 1600,760 L1600,900 L0,900 Z" fill="#FFFFFF" fill-opacity="0.06"/>
 </svg>`
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
@@ -222,7 +225,7 @@ function applyCorporateMaster (slide, { title, subtitle, pageNo, totalSlides, ve
         y: 0.42,
         w: 8.2,
         h: 0.2,
-        color: 'C7D3E4',
+        color: PPTX_THEME.muted,
         fontFace: PPTX_FONT_BODY,
         fontSize: 9
       })
@@ -374,6 +377,34 @@ async function generateDocx (page) {
   return Packer.toBuffer(doc)
 }
 
+async function generateMd (page) {
+  const sourceContent = String(page.content || '')
+  let markdownBody = getArticlePlainText(page)
+  if (page.contentType === 'markdown') {
+    markdownBody = sourceContent.trim()
+  }
+
+  const lines = [
+    `# ${page.title || 'Artigo'}`,
+    '',
+    `- Caminho: /${page.localeCode}/${page.path}`,
+    `- Criado em: ${page.createdAt || '-'}`,
+    `- Atualizado em: ${page.updatedAt || '-'}`,
+    `- Criador: ${page.creatorName || '-'}`,
+    `- Ultima alteracao por: ${page.authorName || '-'}`,
+    '',
+    '---',
+    '',
+    markdownBody,
+    '',
+    '---',
+    '',
+    `> ${FOOTER_TEXT}`
+  ]
+
+  return Buffer.from(lines.join('\n'), 'utf8')
+}
+
 async function generatePptx (page) {
   const pptx = new PptxGenJS()
   pptx.layout = 'LAYOUT_WIDE'
@@ -416,11 +447,11 @@ async function generatePptx (page) {
     cover.addText('TBDC', { x: 0.5, y: 0.18, w: 4, h: 0.6, color: PPTX_THEME.white, fontFace: PPTX_FONT_TITLE, fontSize: 30, bold: true })
   }
   cover.addText(page.title || 'Artigo', { x: 0.7, y: 1.8, w: 12, h: 1.2, color: PPTX_THEME.white, fontFace: PPTX_FONT_TITLE, fontSize: 34, bold: true })
-  cover.addText('Apresentacao automatica do artigo', { x: 0.7, y: 3.1, w: 11.8, h: 0.6, color: 'DCE3EE', fontFace: PPTX_FONT_BODY, fontSize: 18 })
+  cover.addText('Apresentacao automatica do artigo', { x: 0.7, y: 3.1, w: 11.8, h: 0.6, color: PPTX_THEME.muted, fontFace: PPTX_FONT_BODY, fontSize: 18 })
   cover.addText(`Criado em: ${page.createdAt || '-'}\nAtualizado em: ${page.updatedAt || '-'}\nCriador: ${page.creatorName || '-'}\nUltima alteracao por: ${page.authorName || '-'}`, {
     x: 0.9, y: 4.1, w: 7.5, h: 2.0, color: PPTX_THEME.white, fontFace: PPTX_FONT_BODY, fontSize: 14, valign: 'top'
   })
-  cover.addShape('rect', { x: 9.2, y: 3.7, w: 3.2, h: 2.3, fill: { color: '1E2A3D' }, line: { color: PPTX_THEME.accent, pt: 1.2 } })
+  cover.addShape('rect', { x: 9.2, y: 3.7, w: 3.2, h: 2.3, fill: { color: PPTX_THEME.panel }, line: { color: PPTX_THEME.accent, pt: 1.2 } })
   cover.addText(`/${page.localeCode}/${page.path}`, { x: 9.35, y: 4.5, w: 2.9, h: 1.0, color: PPTX_THEME.white, fontFace: 'Consolas', fontSize: 11, align: 'center', valign: 'mid' })
   cover.addText(version, {
     x: 0.85,
@@ -456,7 +487,7 @@ async function generatePptx (page) {
     w: 11.8,
     h: 5.45,
     fill: { color: 'FFFFFF' },
-    line: { color: 'DCE3EE', pt: 1 },
+    line: { color: PPTX_THEME.line, pt: 1 },
     radius: 0.1
   })
   summary.addText('Sumario', {
@@ -519,7 +550,7 @@ async function generatePptx (page) {
       w: 11.95,
       h: 5.5,
       fill: { color: 'FFFFFF' },
-      line: { color: 'DCE3EE', pt: 1 },
+      line: { color: PPTX_THEME.line, pt: 1 },
       radius: 0.1
     })
     slide.addShape('rect', {
@@ -573,6 +604,12 @@ async function generate (format, page) {
         mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         fileName: safeFilename(page, 'docx'),
         buffer: await generateDocx(page)
+      }
+    case 'md':
+      return {
+        mime: 'text/markdown; charset=utf-8',
+        fileName: safeFilename(page, 'md'),
+        buffer: await generateMd(page)
       }
     case 'pptx':
       return {

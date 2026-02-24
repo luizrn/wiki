@@ -24,6 +24,20 @@ function normalizePath(path) {
   return p
 }
 
+function normalizeWikiInput(input = '') {
+  const raw = _.trim(_.toString(input || ''))
+  if (!raw) return ''
+  if (raw.includes('/_wiki/wikis/')) {
+    const idx = raw.indexOf('/_wiki/wikis/')
+    const suffix = raw.slice(idx + '/_wiki/wikis/'.length)
+    return _.trim(suffix.split(/[/?#]/)[0])
+  }
+  if (raw.startsWith('/wikis/')) {
+    return _.trim(raw.slice('/wikis/'.length).split(/[/?#]/)[0])
+  }
+  return raw
+}
+
 function stripRootPrefix(path, rootPath) {
   const p = normalizePath(path)
   const r = normalizePath(rootPath)
@@ -143,6 +157,27 @@ module.exports = {
     )
   },
 
+  async resolveWikiIdentifier(project, wikiInput) {
+    const normalized = normalizeWikiInput(wikiInput)
+    if (!normalized) {
+      throw new Error('Wiki não informada.')
+    }
+
+    const wikis = await this.listWikis(project)
+    const byId = _.find(wikis, w => w.id === normalized)
+    if (byId) return byId.id
+
+    const normalizedLc = _.toLower(normalized)
+    const byName = _.find(wikis, w => _.toLower(w.name) === normalizedLc)
+    if (byName) return byName.id
+
+    const byMappedPath = _.find(wikis, w => _.toLower(w.mappedPath || '') === normalizedLc)
+    if (byMappedPath) return byMappedPath.id
+
+    const names = wikis.map(w => w.name).join(', ')
+    throw new Error(`Wiki "${wikiInput}" não encontrada no projeto "${project}". Wikis disponíveis: ${names}`)
+  },
+
   flattenTree(node, out = []) {
     if (!node) return out
     if (node.path) out.push(node.path)
@@ -172,33 +207,36 @@ module.exports = {
     user
   }) {
     const conf = await this.getConfig()
+    const wikiId = await this.resolveWikiIdentifier(project, wiki)
+    const wikiTagKey = normalizeWikiInput(wiki)
     const effectiveLocale = locale || conf.defaultLocale || WIKI.config.lang.code || 'en'
-    const tree = await this.getPageTree(project, wiki, rootPath)
+    const tree = await this.getPageTree(project, wikiId, rootPath)
     const azurePaths = _.uniq(this.flattenTree(tree, []))
 
     let stats = { total: azurePaths.length, imported: 0, updated: 0, skipped: 0, failed: 0, items: [] }
 
     for (const azurePath of azurePaths) {
       try {
-        const page = await this.getPage(project, wiki, azurePath)
+        const page = await this.getPage(project, wikiId, azurePath)
         const markdown = _.toString(page.content || '').trim()
         const content = markdown.length > 0 ? markdown : `# ${_.last((azurePath || '/').split('/')) || 'Home'}`
         const sourceHash = hashContent(content)
         const wikiPath = this.buildWikiPath({
           project,
-          wiki,
+          wiki: normalizeWikiInput(wiki),
           azurePath,
           rootPath,
           targetBasePath
         })
 
+        const legacyWikiKey = normalizeWikiInput(wiki)
         const mapping = await WIKI.models.knex('azureWikiSyncMap')
           .where({
             organization: conf.organization,
             project,
-            wiki,
             azurePath
           })
+          .whereIn('wiki', _.uniq([wikiId, legacyWikiKey, wiki]))
           .first()
 
         if (incremental && mapping && mapping.contentHash === sourceHash) {
@@ -210,7 +248,7 @@ module.exports = {
         const titleFromPath = _.last((azurePath || '/').split('/')) || 'Home'
         const title = _.trim(page.title || titleFromPath) || 'Home'
         const description = parseJSONLineSummary(content)
-        const tags = _.uniq(['azure-devops', `azure-project-${slugifyPathSegment(project)}`, `azure-wiki-${slugifyPathSegment(wiki)}`])
+        const tags = _.uniq(['azure-devops', `azure-project-${slugifyPathSegment(project)}`, `azure-wiki-${slugifyPathSegment(wikiTagKey)}`])
 
         let existing = null
         if (mapping && mapping.pageId) {
@@ -265,6 +303,7 @@ module.exports = {
         const lastSyncAt = nowISO()
         if (mapping) {
           await WIKI.models.knex('azureWikiSyncMap').where('id', mapping.id).update({
+            wiki: wikiId,
             pageId: savedPage.id,
             contentHash: sourceHash,
             lastSyncAt
@@ -274,7 +313,7 @@ module.exports = {
             pageId: savedPage.id,
             organization: conf.organization,
             project,
-            wiki,
+            wiki: wikiId,
             azurePath,
             contentHash: sourceHash,
             lastSyncAt

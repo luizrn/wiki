@@ -8,9 +8,9 @@
           span(v-if='contentLicense === `alr`') {{ $t('common:footer.copyright', { company: company, year: currentYear, interpolation: { escapeValue: false } }) }} |&nbsp;
           span(v-else) {{ $t('common:footer.license', { company: company, license: $t('common:license.' + contentLicense), interpolation: { escapeValue: false } }) }} |&nbsp;
         span Distribuído por #[a(href='https://wiki.js.org', ref='nofollow') Wiki.js] (versão TBDC V2)
-      v-btn.ml-3(x-small, outlined, color='success', href='/status')
-        v-icon(left, x-small, color='green') mdi-check-circle
-        span Status dos sistemas TBDC em tempo real
+      v-btn.ml-3(x-small, outlined, :color='statusColor', href='/status')
+        v-icon(left, x-small, :color='statusColor') {{ statusIcon }}
+        span {{ statusLabel }}
 </template>
 
 <script>
@@ -36,7 +36,9 @@ export default {
   },
   data() {
     return {
-      currentYear: (new Date()).getFullYear()
+      currentYear: (new Date()).getFullYear(),
+      statusOverall: '',
+      statusTimer: null
     }
   },
   computed: {
@@ -52,6 +54,58 @@ export default {
         return this.color
       } else {
         return this.darkColor
+      }
+    },
+    statusLabel () {
+      const map = {
+        Operational: 'Status operacional',
+        'Partially Degraded Service': 'Serviço parcialmente degradado',
+        'Degraded Performance': 'Performance degradada',
+        'Major Outage': 'Indisponibilidade geral',
+        'Under Maintenance': 'Em manutenção',
+        Unknown: 'Status indisponível'
+      }
+      const txt = map[this.statusOverall] || this.statusOverall || 'Status dos sistemas TBDC em tempo real'
+      return txt
+    },
+    statusColor () {
+      const s = this.statusOverall
+      if (s === 'Operational') return 'success'
+      if (s === 'Partially Degraded Service' || s === 'Degraded Performance' || s === 'Under Maintenance') return 'warning'
+      if (s === 'Major Outage') return 'error'
+      return 'info'
+    },
+    statusIcon () {
+      const s = this.statusOverall
+      if (s === 'Operational') return 'mdi-check-circle'
+      if (s === 'Major Outage') return 'mdi-alert-circle'
+      if (s === 'Partially Degraded Service' || s === 'Degraded Performance') return 'mdi-alert'
+      if (s === 'Under Maintenance') return 'mdi-wrench-clock'
+      return 'mdi-help-circle'
+    }
+  },
+  mounted () {
+    this.refreshStatus()
+    this.statusTimer = window.setInterval(this.refreshStatus, 30000)
+  },
+  beforeDestroy () {
+    if (this.statusTimer) {
+      window.clearInterval(this.statusTimer)
+      this.statusTimer = null
+    }
+  },
+  methods: {
+    async refreshStatus () {
+      try {
+        const resp = await fetch('/status/summary', {
+          method: 'GET',
+          credentials: 'same-origin'
+        })
+        if (!resp.ok) return
+        const data = await resp.json()
+        this.statusOverall = data && data.overall ? data.overall : ''
+      } catch (err) {
+        // Silent fallback to avoid noisy footer errors.
       }
     }
   }

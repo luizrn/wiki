@@ -186,14 +186,22 @@ module.exports = {
     if (!config.channelDiscord || _.isEmpty(config.discordWebhookUrl)) {
       throw new Error('Discord channel is disabled or webhook is empty.')
     }
+
+    const sampleEvent = {
+      eventType: 'created',
+      title: message || 'Teste de notificação de artigos',
+      localeCode: 'pt-br',
+      path: 'exemplo/novo-artigo',
+      actorName: 'Sistema',
+      pageDate: new Date().toISOString(),
+      id: 0
+    }
+
     await request({
       method: 'POST',
       uri: config.discordWebhookUrl,
       json: true,
-      body: {
-        username: 'Wiki.js',
-        content: message || 'Teste de notificacao Wiki.js'
-      }
+      body: this.buildDiscordPayload(sampleEvent, { isTest: true })
     })
   },
 
@@ -309,19 +317,76 @@ module.exports = {
     if (_.isEmpty(config.discordWebhookUrl)) {
       return
     }
-    const pageUrl = `${WIKI.config.host}/${event.localeCode}/${event.path}`
-    const label = event.eventType === 'created' ? 'Novo artigo' : 'Artigo atualizado'
-    const content = `**${label}**\n**${event.title}**\n${pageUrl}\nAutor da alteracao: ${event.actorName || 'Sistema'}`
 
     await request({
       method: 'POST',
       uri: config.discordWebhookUrl,
       json: true,
-      body: {
-        username: 'Wiki.js',
-        content: content.slice(0, 1900)
-      }
+      body: this.buildDiscordPayload(event)
     })
+  },
+
+  buildDiscordPayload (event, { isTest = false } = {}) {
+    const isCreated = event.eventType === 'created'
+    const eventIcon = isCreated ? '🆕' : '🔄'
+    const eventLabel = isCreated ? 'NOVO ARTIGO CRIADO' : 'ARTIGO ATUALIZADO'
+    const borderColor = isCreated ? 0x57F287 : 0xFEE75C
+    const pageUrl = `${WIKI.config.host}/${event.localeCode}/${event.path}`
+    const when = this.formatPtDate(event.pageDate || new Date().toISOString())
+    const safeTitle = _.truncate(event.title || 'Sem título', { length: 180 })
+    const safePath = _.truncate(event.path || '/', { length: 220 })
+    const footerSuffix = isTest ? 'Teste manual' : `${isCreated ? 'Criado' : 'Atualizado'} automaticamente`
+    const pageId = _.get(event, 'pageId', _.get(event, 'id', '-'))
+
+    return {
+      username: 'Wiki Interna',
+      embeds: [
+        {
+          color: borderColor,
+          title: `${eventIcon} ${safeTitle}`,
+          description: [
+            `**${eventLabel}**`,
+            'O conteúdo foi modificado. Veja os detalhes:'
+          ].join('\n'),
+          fields: [
+            {
+              name: '📁 Caminho',
+              value: `\`${safePath}\``,
+              inline: false
+            },
+            {
+              name: '👤 Quem fez',
+              value: event.actorName || 'Sistema',
+              inline: true
+            },
+            {
+              name: '🕒 Quando',
+              value: when,
+              inline: true
+            },
+            {
+              name: '🔗 Acesso Rápido',
+              value: `[Clique aqui para abrir o artigo](${pageUrl})`,
+              inline: false
+            }
+          ],
+          footer: {
+            text: `ID: ${pageId} • Wiki TBDC • ${footerSuffix}`
+          },
+          timestamp: event.pageDate || new Date().toISOString()
+        }
+      ]
+    }
+  },
+
+  formatPtDate (isoDate) {
+    try {
+      return new Date(isoDate).toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo'
+      })
+    } catch (err) {
+      return isoDate
+    }
   },
 
   async insertEventIfNew (payload) {

@@ -142,6 +142,7 @@ module.exports = {
         })
       }).map(r => ({
         ...r,
+        localeCode: r.locale,
         tags: _.map(r.tags, 'tag')
       }))
       if (args.tags && args.tags.length > 0) {
@@ -293,7 +294,8 @@ module.exports = {
       }).map(r => ({
         ...r,
         parent: r.parent || 0,
-        locale: r.localeCode
+        locale: r.localeCode,
+        localeCode: r.localeCode
       }))
     },
     /**

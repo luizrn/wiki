@@ -1,0 +1,29 @@
+# ===============================================
+# UPTIME KUMA
+# ===============================================
+
+extend type Query {
+  uptimeKuma: UptimeKumaQuery
+}
+
+extend type Mutation {
+  uptimeKuma: UptimeKumaMutation
+}
+
+type UptimeKumaQuery {
+  config: UptimeKumaConfig @auth(requires: ["manage:system"])
+}
+
+type UptimeKumaMutation {
+  saveConfig(
+    baseUrl: String!
+    statusSlug: String!
+  ): DefaultResponse @auth(requires: ["manage:system"])
+}
+
+type UptimeKumaConfig {
+  baseUrl: String!
+  statusSlug: String!
+  statusPageUrl: String!
+}
+

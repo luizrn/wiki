@@ -10,7 +10,7 @@ v-container(fluid, grid-list-lg)
         v-spacer
         v-btn.animated.fadeInDown.wait-p2s.mr-3(outlined, color='grey', icon, @click='refresh')
           v-icon mdi-refresh
-        v-btn.animated.fadeInDown(color='primary', large, depressed, to='/tbdc-companies/new')
+        v-btn.animated.fadeInDown(v-if='canManage', color='primary', large, depressed, to='/new')
           v-icon(left) mdi-plus
           span Novo Cliente
 
@@ -27,7 +27,7 @@ v-container(fluid, grid-list-lg)
             v-flex(xs12, md2)
               v-select(v-model='filterModule' :items='modules' item-text='name' item-value='id' label='Módulo' solo flat hide-details dense clearable)
             v-flex(xs12, md3, class='text-right')
-              v-btn(color='primary', depressed, to='/tbdc-master', text)
+              v-btn(v-if='canManage', color='primary', depressed, href='/a/tbdc-master', text)
                 v-icon(left) mdi-cog-outline
                 span Dados Mestres
 
@@ -61,17 +61,18 @@ v-container(fluid, grid-list-lg)
             v-chip(v-else x-small color='red' dark) NÃO
 
           template(v-slot:item.actions='{ item }')
-            v-tooltip(top)
-              template(v-slot:activator='{ on }')
-                v-btn(v-on='on' icon small color='primary' @click='$router.push("/tbdc-companies/" + item.company.id)')
-                  v-icon(small) mdi-pencil
-              span Editar Cliente
+            template(v-if='canManage')
+              v-tooltip(top)
+                template(v-slot:activator='{ on }')
+                  v-btn(v-on='on' icon small color='primary' @click='$router.push("/" + item.company.id)')
+                    v-icon(small) mdi-pencil
+                span Editar Cliente
 
-            v-tooltip(top)
-              template(v-slot:activator='{ on }')
-                v-btn(v-on='on' icon small color='red' @click='deleteCompany(item.company)')
-                  v-icon(small) mdi-delete
-              span Excluir Cliente
+              v-tooltip(top)
+                template(v-slot:activator='{ on }')
+                  v-btn(v-on='on' icon small color='red' @click='deleteCompany(item.company)')
+                    v-icon(small) mdi-delete
+                span Excluir Cliente
 
         v-card-chin(v-if='pageCount > 1')
           v-spacer
@@ -99,27 +100,30 @@ export default {
       companies: [],
       staff: [],
       products: [],
-      headers: [
+      permissionLevels: []
+    }
+  },
+  computed: {
+    canManage() {
+      return _.includes(_.get(this.$store, 'state.user.permissions', []), 'manage:system')
+    },
+    headers() {
+      const baseHeaders = [
         { text: 'Empresa', value: 'company' },
         { text: 'Produto', value: 'module.product.name' },
         { text: 'Módulo / Regra', value: 'ruleName' },
         { text: 'Permissão', value: 'level', width: 140 },
         { text: 'Descrição', value: 'description' },
-        { text: 'Em Vigor', value: 'isActive', width: 100 },
-        { text: '', value: 'actions', sortable: false, width: 100 }
-      ],
-      levels: {
-        GREEN: { short: 'LIVRE', color: 'green', full: 'Suporte tem permissão' },
-        BLUE: { short: 'AUTORIZADO', color: '#18563B', full: 'Sim, mas com autorização do focal' },
-        PURPLE: { short: 'SOMENTE CS', color: 'purple', full: 'Somente o CS tem permissão' },
-        YELLOW: { short: 'CONSULTAR CS', color: '#7A980F', full: 'Somente após consulta com CS' },
-        ORANGE: { short: 'DEPENDE', color: '#9BC113', full: 'Com alguma regra sobre algum parâmetro' },
-        RED: { short: 'PROIBIDO', color: 'red', full: 'Não permitido ou não informado' },
-        BLACK: { short: 'NÃO UTILIZA', color: 'black', full: 'Não utiliza este produto' }
+        { text: 'Em Vigor', value: 'isActive', width: 100 }
+      ]
+      if (this.canManage) {
+        baseHeaders.push({ text: '', value: 'actions', sortable: false, width: 100 })
       }
-    }
-  },
-  computed: {
+      return baseHeaders
+    },
+    levelsMap() {
+      return _.keyBy(this.permissionLevels || [], 'code')
+    },
     modules() {
       if (this.filterProduct) {
         const prod = _.find(this.products, { id: this.filterProduct })
@@ -149,9 +153,9 @@ export default {
       await this.$apollo.queries.companies.refetch()
       this.loading = false
     },
-    getLevelColor(l) { return (this.levels[l] || {}).color || 'grey' },
-    getLevelShort(l) { return (this.levels[l] || {}).short || l },
-    getLevelFull(l) { return (this.levels[l] || {}).full || l },
+    getLevelColor(l) { return _.get(this.levelsMap, [l, 'color'], 'grey') },
+    getLevelShort(l) { return (_.get(this.levelsMap, [l, 'label'], l) || l).toUpperCase().slice(0, 20) },
+    getLevelFull(l) { return _.get(this.levelsMap, [l, 'description'], _.get(this.levelsMap, [l, 'label'], l)) || l },
     async deleteCompany(company) {
       if (confirm(`Excluir o cliente ${company.name} e todas as suas regras definitivamete?`)) {
         try {
@@ -192,6 +196,10 @@ export default {
     products: {
       query: gql`query { tbdc { products { id name modules { id name } } } }`,
       update: data => data.tbdc.products
+    },
+    permissionLevels: {
+      query: gql`query { tbdc { permissionLevels { id code label description color order isActive } } }`,
+      update: data => _.orderBy((data.tbdc.permissionLevels || []).filter(x => x.isActive), ['order', 'label'], ['asc', 'asc'])
     }
   }
 }

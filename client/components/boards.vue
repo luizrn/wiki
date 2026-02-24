@@ -21,6 +21,10 @@ v-app(:dark='$vuetify.theme.dark').boards
       v-list-item(v-for='t in teams' :key='t.id' @click='openTeam(t)')
         v-list-item-avatar: v-icon(:color='t.color || `blue-grey`') mdi-account-group
         v-list-item-title {{ t.name }}
+    v-divider
+    v-toolbar(flat, dense)
+      .subtitle-2 Navegação Wiki
+    nav-sidebar(:color='$vuetify.theme.dark ? `grey darken-4-d4` : `primary`', :items='sidebarItems', :nav-mode='resolvedNavMode')
 
   v-content.board-content
     v-container(fluid)
@@ -178,7 +182,11 @@ v-app(:dark='$vuetify.theme.dark').boards
 <script>
 import _ from 'lodash'
 import gql from 'graphql-tag'
+import { get } from 'vuex-pathify'
 import draggable from 'vuedraggable'
+import NavSidebar from '../themes/default/components/nav-sidebar.vue'
+
+/* global siteLangs, siteConfig */
 
 const Q = {
   sidebar: gql`query { boards { list { id title description color icon cardsCount stagesCount } groups { id name } teams { id name description color isArchived members { id name email pictureUrl } boardIds } } }`,
@@ -205,7 +213,21 @@ const M = {
 }
 
 export default {
-  components: { draggable },
+  props: {
+    sidebar: {
+      type: String,
+      default: ''
+    },
+    navMode: {
+      type: String,
+      default: 'MIXED'
+    },
+    locale: {
+      type: String,
+      default: ''
+    }
+  },
+  components: { draggable, NavSidebar },
   data: () => ({
     boards: [],
     groups: [],
@@ -234,8 +256,37 @@ export default {
     ]
   }),
   created() {
+    const siteLocales = (typeof siteLangs !== 'undefined' && Array.isArray(siteLangs)) ? siteLangs.map(l => l.code || l).filter(Boolean) : []
+    const localeCandidates = [this.locale, this.$store.get('page/locale'), this.userLocale, siteConfig.lang, siteLocales[0], 'en'].filter(Boolean)
+    const activeLocale = localeCandidates.find(lc => siteLocales.length < 1 || siteLocales.includes(lc)) || localeCandidates[0]
+    const activePath = this.$store.get('page/path') || 'home'
     this.$store.commit('page/SET_MODE', 'boards')
+    this.$store.commit('page/SET_LOCALE', activeLocale)
+    this.$store.commit('page/SET_PATH', activePath)
     this.refresh()
+  },
+  computed: {
+    userLocale: get('user/localeCode'),
+    sidebarItems () {
+      if (_.isArray(this.sidebar)) {
+        return this.sidebar
+      }
+      if (!this.sidebar || !_.isString(this.sidebar)) {
+        return []
+      }
+      try {
+        return JSON.parse(window.atob(this.sidebar))
+      } catch (err) {
+        try {
+          return JSON.parse(this.sidebar)
+        } catch (err2) {
+          return []
+        }
+      }
+    },
+    resolvedNavMode () {
+      return this.navMode || 'MIXED'
+    }
   },
   methods: {
     async refresh(selectId = null) {

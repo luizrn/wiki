@@ -8,9 +8,9 @@ v-container(fluid, grid-list-lg)
           .headline.primary--text.animated.fadeInLeft {{ isEdit ? 'Editar Empresa' : 'Nova Empresa' }}
           .subtitle-1.grey--text.animated.fadeInLeft.wait-p2s {{ company.name || 'Cadastro de cliente' }}
         v-spacer
-        v-btn.ml-3.animated.fadeInDown(color='grey', icon, outlined, to='/tbdc-companies')
+        v-btn.ml-3.animated.fadeInDown(color='grey', icon, outlined, to='/')
           v-icon mdi-arrow-left
-        v-btn.ml-3.animated.fadeInDown(color='primary', large, depressed, @click='saveCompany', :loading='loading')
+        v-btn.ml-3.animated.fadeInDown(v-if='canManage', color='primary', large, depressed, @click='saveCompany', :loading='loading')
           v-icon(left) mdi-check
           span Salvar Cliente
 
@@ -124,7 +124,7 @@ v-container(fluid, grid-list-lg)
                   v-icon(left) mdi-chevron-left
                   span Voltar
                 v-spacer
-                v-btn(color='primary', depressed, large, @click='saveCompany', :loading='loading')
+                v-btn(v-if='canManage', color='primary', depressed, large, @click='saveCompany', :loading='loading')
                   v-icon(left) mdi-content-save
                   span Finalizar e Salvar Cliente
 
@@ -161,28 +161,60 @@ export default {
         { text: 'Vigente', value: 'isActive', width: 90, sortable: false },
         { text: '', value: 'actions', sortable: false, width: 40 }
       ],
-      levels: [
-        { text: '🟢 Suporte tem permissão', value: 'GREEN', color: 'green' },
-        { text: '🔵 Sim, autorizado pelo focal', value: 'BLUE', color: '#18563B' },
-        { text: '🟣 Somente CS tem permissão', value: 'PURPLE', color: 'purple' },
-        { text: '🟡 Após consulta com CS', value: 'YELLOW', color: '#7A980F' },
-        { text: '🟠 Regra sobre parâmetro', value: 'ORANGE', color: '#9BC113' },
-        { text: '🔴 Não permitido', value: 'RED', color: 'red' },
-        { text: '⚫ Não utiliza', value: 'BLACK', color: 'black' }
+      levels: [],
+      fallbackLevels: [
+        { text: 'Suporte tem permissão', value: 'GREEN', color: '#4CAF50' },
+        { text: 'Sim, autorizado pelo focal', value: 'BLUE', color: '#18563B' },
+        { text: 'Somente CS tem permissão', value: 'PURPLE', color: '#8E24AA' },
+        { text: 'Após consulta com CS', value: 'YELLOW', color: '#7A980F' },
+        { text: 'Regra sobre parâmetro', value: 'ORANGE', color: '#9BC113' },
+        { text: 'Não permitido', value: 'RED', color: '#F44336' },
+        { text: 'Não utiliza', value: 'BLACK', color: '#000000' }
       ]
     }
   },
   computed: {
+    canManage() {
+      return _.includes(_.get(this.$store, 'state.user.permissions', []), 'manage:system')
+    },
     staffCS() { return _.filter(this.staff, { role: 'CS' }) },
     staffImplantador() { return _.filter(this.staff, { role: 'IMPLANTADOR' }) }
   },
   async created() {
+    if (!this.canManage) {
+      this.$store.commit('showNotification', {
+        message: 'Você não tem permissão para editar clientes.',
+        style: 'warning'
+      })
+      this.$router.push('/')
+      return
+    }
     if (this.$route.params.id) {
       this.isEdit = true
       await this.loadCompany(this.$route.params.id)
     }
+    await this.loadPermissionLevels()
   },
   methods: {
+    async loadPermissionLevels() {
+      try {
+        const resp = await this.$apollo.query({
+          query: gql`query { tbdc { permissionLevels { id code label description color order isActive } } }`,
+          fetchPolicy: 'network-only'
+        })
+        const rows = _.orderBy((_.get(resp, 'data.tbdc.permissionLevels', []) || []).filter(x => x.isActive), ['order', 'label'], ['asc', 'asc'])
+        this.levels = rows.map(x => ({
+          text: x.label,
+          value: x.code,
+          color: x.color
+        }))
+      } catch (err) {
+        this.levels = this.fallbackLevels
+      }
+      if (!this.levels || this.levels.length < 1) {
+        this.levels = this.fallbackLevels
+      }
+    },
     async loadCompany(id) {
       this.loading = true
       try {
@@ -253,6 +285,23 @@ export default {
       }
       this.loading = true
       try {
+        const variables = {
+          ..._.omit(this.company, ['id']),
+          csId: this.company.csId ? parseInt(this.company.csId) : null,
+          implantadorId: this.company.implantadorId ? parseInt(this.company.implantadorId) : null,
+          permissions: _.map(this.permissions, p => ({
+            moduleId: parseInt(p.moduleId),
+            ruleName: p.ruleName,
+            level: p.level,
+            description: p.description,
+            isActive: !!p.isActive
+          })).filter(p => Number.isInteger(p.moduleId) && p.moduleId > 0)
+        }
+
+        if (this.company.id) {
+          variables.id = parseInt(this.company.id)
+        }
+
         await this.$apollo.mutate({
           mutation: gql`
             mutation($id: Int, $name: String!, $focalName: String, $focalEmail: String, $focalPhone: String, $csId: Int, $implantadorId: Int, $isActive: Boolean, $permissions: [TBDCPermissionInput]) {
@@ -263,22 +312,10 @@ export default {
               }
             }
           `,
-          variables: {
-            ...this.company,
-            id: this.company.id ? parseInt(this.company.id) : null,
-            csId: this.company.csId ? parseInt(this.company.csId) : null,
-            implantadorId: this.company.implantadorId ? parseInt(this.company.implantadorId) : null,
-            permissions: _.map(this.permissions, p => ({
-              moduleId: parseInt(p.moduleId),
-              ruleName: p.ruleName,
-              level: p.level,
-              description: p.description,
-              isActive: !!p.isActive
-            })).filter(p => Number.isInteger(p.moduleId) && p.moduleId > 0)
-          }
+          variables
         })
         this.$store.commit('showNotification', { message: 'Cliente salvo com sucesso!', style: 'success' })
-        this.$router.push('/tbdc-companies')
+        this.$router.push('/')
       } catch (err) { this.$store.commit('pushGraphError', err) }
       this.loading = false
     }

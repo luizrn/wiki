@@ -57,12 +57,34 @@ type TBDCPermission {
   updatedAt: String!
 }
 
+type TBDCPermissionLevel {
+  id: Int!
+  code: String!
+  label: String!
+  description: String
+  color: String!
+  order: Int!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
 input TBDCPermissionInput {
   id: Int
   moduleId: Int!
   ruleName: String!
   level: String!
   description: String
+  isActive: Boolean
+}
+
+input TBDCPermissionLevelInput {
+  id: Int
+  code: String!
+  label: String!
+  description: String
+  color: String!
+  order: Int
   isActive: Boolean
 }
 
@@ -75,10 +97,11 @@ extend type Query {
 }
 
 type TBDCQuery {
-  companies: [TBDCCompany] @auth(requires: ["manage:system"])
-  company(id: Int!): TBDCCompany @auth(requires: ["manage:system"])
-  products: [TBDCProduct] @auth(requires: ["manage:system"])
-  staff: [TBDCStaff] @auth(requires: ["manage:system"])
+  companies: [TBDCCompany]
+  company(id: Int!): TBDCCompany
+  products: [TBDCProduct]
+  staff: [TBDCStaff]
+  permissionLevels: [TBDCPermissionLevel]
 }
 
 # -----------------------------------------------
@@ -112,4 +135,15 @@ type TBDCMutation {
 
   saveStaff(id: Int, name: String!, email: String!, role: String!): TBDCStaff @auth(requires: ["manage:system"])
   deleteStaff(id: Int!): Boolean @auth(requires: ["manage:system"])
+
+  savePermissionLevel(
+    id: Int
+    code: String!
+    label: String!
+    description: String
+    color: String!
+    order: Int
+    isActive: Boolean
+  ): TBDCPermissionLevel @auth(requires: ["manage:system"])
+  deletePermissionLevel(id: Int!): Boolean @auth(requires: ["manage:system"])
 }

@@ -46,14 +46,32 @@
           hide-details
         )
         v-list.chat-user-list(dense)
-          v-list-item(v-for='user in filteredUsers', :key='user.id', @click='selectUser(user)')
-            v-list-item-avatar
-              v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
-            v-list-item-content
-              v-list-item-title {{ user.name }}
-              v-list-item-subtitle {{ user.isOnline ? "Online" : "Offline" }}
-            v-list-item-action
-              v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+          template(v-if='sortedRecentUsers.length > 0')
+            v-subheader.chat-group-title Conversas recentes
+            v-list-item.chat-user-item(v-for='user in sortedRecentUsers', :key='`recent-` + user.id', @click='selectUser(user)')
+              v-list-item-avatar
+                v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
+              v-list-item-content
+                v-list-item-title {{ user.name }}
+                v-list-item-subtitle
+                  span(:class='user.isOnline ? "online-text" : "offline-text"') {{ user.isOnline ? "Online" : "Offline" }}
+              v-list-item-action
+                v-badge(v-if='unreadByUser[user.id] > 0', color='red', :content='unreadByUser[user.id]')
+                  v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+                v-icon(v-else, small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+          template(v-for='(groupUsers, groupName) in groupedUsersNoHistory')
+            v-subheader.chat-group-title(:key='`group-title-` + groupName') {{ groupName }}
+            v-list-item.chat-user-item(v-for='user in groupUsers', :key='`group-user-` + user.id', @click='selectUser(user)')
+              v-list-item-avatar
+                v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
+              v-list-item-content
+                v-list-item-title {{ user.name }}
+                v-list-item-subtitle
+                  span(:class='user.isOnline ? "online-text" : "offline-text"') {{ user.isOnline ? "Online" : "Offline" }}
+              v-list-item-action
+                v-badge(v-if='unreadByUser[user.id] > 0', color='red', :content='unreadByUser[user.id]')
+                  v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+                v-icon(v-else, small, :color='user.isOnline ? "green" : "grey"') mdi-circle
 
       //- CHAT BOX
       template(v-else)
@@ -94,6 +112,9 @@ const CHAT_USERS = gql`
         pictureUrl
         isOnline
         lastActiveAt
+        lastMessageAt
+        primaryGroup
+        groups
       }
     }
   }
@@ -192,7 +213,11 @@ export default {
       messages: [],
       newMessage: '',
       totalUnread: 0,
-      heartbeatInterval: null
+      unreadByUser: {},
+      heartbeatInterval: null,
+      usersRefreshInterval: null,
+      conversationRefreshInterval: null,
+      lastMessageId: null
     }
   },
   computed: {
@@ -202,13 +227,42 @@ export default {
     isChatEnabledGlobally: get('site/chatEnabled'),
     isChatEnabledIndividually: get('user/chatEnabled'),
     filteredUsers() {
-      return this.users
+      return _.filter(this.users, u => {
+        if (!this.search) return true
+        const needle = _.toLower(_.trim(this.search))
+        return _.toLower(u.name || '').includes(needle) || _.toLower(u.email || '').includes(needle)
+      })
+    },
+    sortedRecentUsers() {
+      return _.orderBy(
+        _.filter(this.filteredUsers, u => !!u.lastMessageAt),
+        [
+          u => -(new Date(u.lastMessageAt).getTime() || 0),
+          u => _.toLower(u.name || '')
+        ],
+        ['asc', 'asc']
+      )
+    },
+    groupedUsersNoHistory() {
+      const withoutHistory = _.orderBy(
+        _.filter(this.filteredUsers, u => !u.lastMessageAt),
+        [
+          u => _.toLower(u.primaryGroup || 'Sem Grupo'),
+          u => _.toLower(u.name || '')
+        ],
+        ['asc', 'asc']
+      )
+      return _.groupBy(withoutHistory, u => u.primaryGroup || 'Sem Grupo')
     }
   },
   watch: {
     isOpen(val) {
       if (val) {
         this.fetchUsers()
+        this.startUsersAutoRefresh()
+      } else {
+        this.stopUsersAutoRefresh()
+        this.stopConversationAutoRefresh()
       }
     },
     search: _.debounce(function () {
@@ -218,9 +272,15 @@ export default {
     }, 250),
     activeUser(val) {
       if (val) {
+        this.$set(this.unreadByUser, val.id, 0)
         this.fetchMessages()
         this.markCurrentConversationAsRead()
+        this.startConversationAutoRefresh()
         this.scrollToBottom()
+      } else {
+        this.messages = []
+        this.lastMessageId = null
+        this.stopConversationAutoRefresh()
       }
     }
   },
@@ -230,6 +290,7 @@ export default {
         query: MSG_SUBSCRIPTION,
         result({ data }) {
           const msg = data.chatMessageReceived
+          this.touchUserConversation(msg)
           if (this.activeUser && (msg.senderId === this.activeUser.id || msg.receiverId === this.activeUser.id)) {
             this.appendMessage(msg)
             if (msg.senderId === this.activeUser.id && msg.receiverId === this.currentUserId) {
@@ -237,8 +298,9 @@ export default {
             }
             this.scrollToBottom()
           } else if (msg.senderId !== this.currentUserId) {
-            this.totalUnread++
-            // Optionally play sound or show notification
+            const currentUnread = this.unreadByUser[msg.senderId] || 0
+            this.$set(this.unreadByUser, msg.senderId, currentUnread + 1)
+            this.recalculateTotalUnread()
           }
         }
       },
@@ -248,7 +310,7 @@ export default {
           const status = data.userStatusChanged
           const user = _.find(this.users, { id: status.userId })
           if (user) {
-            user.isOnline = status.isOnline
+            this.$set(user, 'isOnline', status.isOnline)
           }
         }
       }
@@ -259,6 +321,8 @@ export default {
   },
   beforeDestroy() {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval)
+    this.stopUsersAutoRefresh()
+    this.stopConversationAutoRefresh()
   },
   methods: {
     toggleChat() {
@@ -277,13 +341,22 @@ export default {
       }
     },
     async fetchMessages() {
+      if (!this.activeUser) return
       try {
         const resp = await this.$apollo.query({
           query: CHAT_MESSAGES,
           variables: { userId: this.activeUser.id },
           fetchPolicy: 'network-only'
         })
-        this.messages = _.get(resp, 'data.chat.messages', [])
+        const nextMessages = _.get(resp, 'data.chat.messages', [])
+        const lastMsg = _.last(nextMessages)
+        const nextLastId = _.get(lastMsg, 'id', null)
+        const hasNewMessage = nextLastId && nextLastId !== this.lastMessageId
+        this.messages = nextMessages
+        this.lastMessageId = nextLastId
+        if (hasNewMessage) {
+          this.scrollToBottom()
+        }
       } catch (err) {
         console.error(err)
       }
@@ -294,6 +367,15 @@ export default {
     appendMessage(msg) {
       if (!_.some(this.messages, { id: msg.id })) {
         this.messages.push(msg)
+        this.lastMessageId = msg.id
+      }
+    },
+    touchUserConversation(msg) {
+      if (!msg) return
+      const otherId = msg.senderId === this.currentUserId ? msg.receiverId : msg.senderId
+      const user = _.find(this.users, { id: otherId })
+      if (user) {
+        this.$set(user, 'lastMessageAt', msg.createdAt)
       }
     },
     async markCurrentConversationAsRead() {
@@ -303,9 +385,8 @@ export default {
           mutation: MARK_AS_READ,
           variables: { senderId: this.activeUser.id }
         })
-        if (this.totalUnread > 0) {
-          this.totalUnread = Math.max(this.totalUnread - 1, 0)
-        }
+        this.$set(this.unreadByUser, this.activeUser.id, 0)
+        this.recalculateTotalUnread()
       } catch (err) {
         // ignore
       }
@@ -326,6 +407,7 @@ export default {
         const msg = _.get(resp, 'data.chat.sendMessage')
         if (msg) {
           this.appendMessage(msg)
+          this.touchUserConversation(msg)
           this.scrollToBottom()
         }
       } catch (err) {
@@ -340,12 +422,44 @@ export default {
         }
       })
     },
+    recalculateTotalUnread() {
+      this.totalUnread = _.sum(_.values(this.unreadByUser))
+    },
     startHeartbeat() {
       // Update status every 2 minutes
       this.updateStatus()
       this.heartbeatInterval = setInterval(() => {
         this.updateStatus()
       }, 120000)
+    },
+    startUsersAutoRefresh() {
+      this.stopUsersAutoRefresh()
+      this.usersRefreshInterval = setInterval(() => {
+        if (this.isOpen && !this.activeUser) {
+          this.fetchUsers()
+        }
+      }, 30000)
+    },
+    stopUsersAutoRefresh() {
+      if (this.usersRefreshInterval) {
+        clearInterval(this.usersRefreshInterval)
+        this.usersRefreshInterval = null
+      }
+    },
+    startConversationAutoRefresh() {
+      this.stopConversationAutoRefresh()
+      this.conversationRefreshInterval = setInterval(() => {
+        if (this.isOpen && this.activeUser) {
+          this.fetchMessages()
+          this.markCurrentConversationAsRead()
+        }
+      }, 8000)
+    },
+    stopConversationAutoRefresh() {
+      if (this.conversationRefreshInterval) {
+        clearInterval(this.conversationRefreshInterval)
+        this.conversationRefreshInterval = null
+      }
     },
     async updateStatus() {
       try {
@@ -373,7 +487,7 @@ export default {
 
 <style lang="scss">
 .chat-widget-container {
-  z-index: 1000;
+  z-index: 1300;
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -383,8 +497,8 @@ export default {
   }
 
   .chat-window {
-    width: 350px;
-    height: 500px;
+    width: 380px;
+    height: 560px;
     display: flex;
     flex-direction: column;
     border-radius: 12px !important;
@@ -392,16 +506,52 @@ export default {
     border: 1px solid #ccc;
     background-color: #fff;
 
+    .v-toolbar {
+      flex: 0 0 auto;
+    }
+
+    .v-toolbar__content {
+      min-height: 52px !important;
+    }
+
     .chat-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 0;
     }
 
     .chat-user-list {
       flex: 1;
       overflow-y: auto;
+      min-height: 0;
+      padding-top: 4px !important;
+      align-content: flex-start;
+    }
+
+    .chat-user-item {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .chat-group-title {
+      min-height: 26px;
+      height: 26px;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: #6b6b6b;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .online-text {
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .offline-text {
+      color: #757575;
     }
 
     .chat-messages {
@@ -411,6 +561,7 @@ export default {
       display: flex;
       flex-direction: column;
       background-color: #e5ddd5; // WhatsApp light background
+      min-height: 0;
 
       .msg-wrapper {
         display: flex;

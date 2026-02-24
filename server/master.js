@@ -169,7 +169,14 @@ module.exports = async () => {
       errorColor: WIKI.config.theming.errorColor || '#D32F2F',
       infoColor: WIKI.config.theming.infoColor || (WIKI.config.theming.primaryColor || '#18563B'),
       neutralColor: WIKI.config.theming.neutralColor || '#90A4AE',
-      chatEnabled: _.get(WIKI.config.theming, 'chatEnabled', true)
+      chatEnabled: _.get(WIKI.config.theming, 'chatEnabled', true),
+      movideskEnabled: _.get(WIKI.config.theming, 'movideskEnabled', false),
+      movideskChatKey: _.get(WIKI.config.theming, 'movideskChatKey', ''),
+      movideskCodeReference: _.get(WIKI.config.theming, 'movideskCodeReference', ''),
+      movideskOrganizationCodeReference: _.get(WIKI.config.theming, 'movideskOrganizationCodeReference', ''),
+      movideskStayConnected: _.get(WIKI.config.theming, 'movideskStayConnected', false),
+      movideskEmptySubject: _.get(WIKI.config.theming, 'movideskEmptySubject', false),
+      movideskStartChat: _.get(WIKI.config.theming, 'movideskStartChat', false)
     }
     res.locals.langs = await WIKI.models.locales.getNavLocales({ cache: true })
     res.locals.analyticsCode = await WIKI.models.analytics.getCode({ cache: true })

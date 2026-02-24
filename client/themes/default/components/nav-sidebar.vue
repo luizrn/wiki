@@ -72,7 +72,7 @@ import _ from 'lodash'
 import gql from 'graphql-tag'
 import { get } from 'vuex-pathify'
 
-/* global siteLangs */
+/* global siteLangs, siteConfig */
 
 export default {
   props: {
@@ -110,6 +110,35 @@ export default {
     locale: get('page/locale')
   },
   methods: {
+    localeCandidates () {
+      const siteLocaleCodes = Array.isArray(siteLangs) ? siteLangs.map(l => l.code || l).filter(Boolean) : []
+      return _.uniq([this.locale, siteConfig.lang, ...siteLocaleCodes, 'en'].filter(Boolean))
+    },
+    async queryTreeWithLocaleFallback (query, variables) {
+      const locales = this.localeCandidates()
+      let lastError = null
+
+      for (const lc of locales) {
+        try {
+          const resp = await this.$apollo.query({
+            query,
+            fetchPolicy: 'cache-first',
+            variables: {
+              ...variables,
+              locale: lc
+            }
+          })
+          if (lc !== this.locale) {
+            this.$store.commit('page/SET_LOCALE', lc)
+          }
+          return resp
+        } catch (err) {
+          lastError = err
+        }
+      }
+
+      throw lastError || new Error('Unable to load navigation tree.')
+    },
     switchMode (mode) {
       this.currentMode = mode
       window.localStorage.setItem('navPref', mode)
@@ -118,32 +147,32 @@ export default {
       }
     },
     async fetchBrowseItems (item) {
-      this.$store.commit(`loadingStart`, 'browse-load')
-      if (!item) {
-        item = this.currentParent
-      }
-
-      if (this.loadedCache.indexOf(item.id) < 0) {
-        this.currentItems = []
-      }
-
-      if (item.id === 0) {
-        this.parents = []
-      } else {
-        const flushRightIndex = _.findIndex(this.parents, ['id', item.id])
-        if (flushRightIndex >= 0) {
-          this.parents = _.take(this.parents, flushRightIndex)
+      this.$store.commit('loadingStart', 'browse-load')
+      try {
+        if (!item) {
+          item = this.currentParent
         }
-        if (this.parents.length < 1) {
-          this.parents.push(this.currentParent)
+
+        if (this.loadedCache.indexOf(item.id) < 0) {
+          this.currentItems = []
         }
-        this.parents.push(item)
-      }
 
-      this.currentParent = item
+        if (item.id === 0) {
+          this.parents = []
+        } else {
+          const flushRightIndex = _.findIndex(this.parents, ['id', item.id])
+          if (flushRightIndex >= 0) {
+            this.parents = _.take(this.parents, flushRightIndex)
+          }
+          if (this.parents.length < 1) {
+            this.parents.push(this.currentParent)
+          }
+          this.parents.push(item)
+        }
 
-      const resp = await this.$apollo.query({
-        query: gql`
+        this.currentParent = item
+
+        const resp = await this.queryTreeWithLocaleFallback(gql`
           query ($parent: Int, $locale: String!) {
             pages {
               tree(parent: $parent, mode: ALL, locale: $locale) {
@@ -156,22 +185,32 @@ export default {
                 locale
               }
             }
-          }
-        `,
-        fetchPolicy: 'cache-first',
-        variables: {
-          parent: item.id,
-          locale: this.locale
+          }`, {
+          parent: item.id
+        })
+        this.loadedCache = _.union(this.loadedCache, [item.id])
+        this.currentItems = _.get(resp, 'data.pages.tree', [])
+      } catch (err) {
+        this.currentItems = []
+        if (window && window.console) {
+          window.console.warn('[nav-sidebar] failed to load browse items', err)
         }
-      })
-      this.loadedCache = _.union(this.loadedCache, [item.id])
-      this.currentItems = _.get(resp, 'data.pages.tree', [])
-      this.$store.commit(`loadingStop`, 'browse-load')
+      } finally {
+        this.$store.commit('loadingStop', 'browse-load')
+      }
     },
     async loadFromCurrentPath() {
-      this.$store.commit(`loadingStart`, 'browse-load')
-      const resp = await this.$apollo.query({
-        query: gql`
+      this.$store.commit('loadingStart', 'browse-load')
+      try {
+        const currentPageId = this.$store.get('page/id')
+        if (!currentPageId || currentPageId < 1) {
+          return this.fetchBrowseItems({
+            id: 0,
+            title: this.currentParent.title
+          })
+        }
+
+        const resp = await this.queryTreeWithLocaleFallback(gql`
           query ($path: String, $locale: String!) {
             pages {
               tree(path: $path, mode: ALL, locale: $locale, includeAncestors: true) {
@@ -184,38 +223,43 @@ export default {
                 locale
               }
             }
+          }`, {
+          path: this.path
+        })
+        const items = _.get(resp, 'data.pages.tree', [])
+        const curPage = _.find(items, ['pageId', currentPageId])
+        if (!curPage) {
+          return this.fetchBrowseItems({
+            id: 0,
+            title: this.currentParent.title
+          })
+        }
+
+        let curParentId = curPage.parent
+        let invertedAncestors = []
+        while (curParentId) {
+          const curParent = _.find(items, ['id', curParentId])
+          if (!curParent) {
+            break
           }
-        `,
-        fetchPolicy: 'cache-first',
-        variables: {
-          path: this.path,
-          locale: this.locale
+          invertedAncestors.push(curParent)
+          curParentId = curParent.parent
         }
-      })
-      const items = _.get(resp, 'data.pages.tree', [])
-      const curPage = _.find(items, ['pageId', this.$store.get('page/id')])
-      if (!curPage) {
-        console.warn('Could not find current page in page tree listing!')
-        return
-      }
 
-      let curParentId = curPage.parent
-      let invertedAncestors = []
-      while (curParentId) {
-        const curParent = _.find(items, ['id', curParentId])
-        if (!curParent) {
-          break
+        this.parents = [this.currentParent, ...invertedAncestors.reverse()]
+        this.currentParent = _.last(this.parents)
+
+        this.loadedCache = [curPage.parent]
+        this.currentItems = _.filter(items, ['parent', curPage.parent])
+      } catch (err) {
+        this.currentItems = []
+        this.parents = []
+        if (window && window.console) {
+          window.console.warn('[nav-sidebar] failed to load current path tree', err)
         }
-        invertedAncestors.push(curParent)
-        curParentId = curParent.parent
+      } finally {
+        this.$store.commit('loadingStop', 'browse-load')
       }
-
-      this.parents = [this.currentParent, ...invertedAncestors.reverse()]
-      this.currentParent = _.last(this.parents)
-
-      this.loadedCache = [curPage.parent]
-      this.currentItems = _.filter(items, ['parent', curPage.parent])
-      this.$store.commit(`loadingStop`, 'browse-load')
     },
     goHome () {
       window.location.assign(siteLangs.length > 0 ? `/${this.locale}/home` : '/')

@@ -45,6 +45,9 @@ type ChatUser {
   pictureUrl: String
   isOnline: Boolean!
   lastActiveAt: String
+  lastMessageAt: String
+  primaryGroup: String
+  groups: [String!]!
 }
 
 type ChatMessage {

@@ -69,7 +69,13 @@ module.exports = {
         infoColor: normalizeHexColor(WIKI.config.theming.infoColor, COLOR_DEFAULTS.infoColor),
         neutralColor: normalizeHexColor(WIKI.config.theming.neutralColor, COLOR_DEFAULTS.neutralColor),
         chatEnabled: _.get(WIKI.config.theming, 'chatEnabled', true),
-        movideskChatKey: _.get(WIKI.config.theming, 'movideskChatKey', '79498363D817478581FAE5265F29E5B8')
+        movideskChatKey: _.get(WIKI.config.theming, 'movideskChatKey', '79498363D817478581FAE5265F29E5B8'),
+        movideskEnabled: _.get(WIKI.config.theming, 'movideskEnabled', false),
+        movideskCodeReference: _.get(WIKI.config.theming, 'movideskCodeReference', ''),
+        movideskOrganizationCodeReference: _.get(WIKI.config.theming, 'movideskOrganizationCodeReference', ''),
+        movideskStayConnected: _.get(WIKI.config.theming, 'movideskStayConnected', false),
+        movideskEmptySubject: _.get(WIKI.config.theming, 'movideskEmptySubject', false),
+        movideskStartChat: _.get(WIKI.config.theming, 'movideskStartChat', false)
       }
     }
   },
@@ -108,6 +114,28 @@ module.exports = {
 
         return {
           responseResult: graphHelper.generateSuccess('Theme config updated')
+        }
+      } catch (err) {
+        return graphHelper.generateError(err)
+      }
+    },
+    async setMovideskConfig (obj, args) {
+      try {
+        WIKI.config.theming = {
+          ...WIKI.config.theming,
+          movideskEnabled: !!args.movideskEnabled,
+          movideskChatKey: _.trim(args.movideskChatKey) || '79498363D817478581FAE5265F29E5B8',
+          movideskCodeReference: _.trim(args.movideskCodeReference || ''),
+          movideskOrganizationCodeReference: _.trim(args.movideskOrganizationCodeReference || ''),
+          movideskStayConnected: _.isBoolean(args.movideskStayConnected) ? args.movideskStayConnected : false,
+          movideskEmptySubject: _.isBoolean(args.movideskEmptySubject) ? args.movideskEmptySubject : false,
+          movideskStartChat: _.isBoolean(args.movideskStartChat) ? args.movideskStartChat : false
+        }
+
+        await WIKI.configSvc.saveToDb(['theming'])
+
+        return {
+          responseResult: graphHelper.generateSuccess('Movidesk config updated')
         }
       } catch (err) {
         return graphHelper.generateError(err)

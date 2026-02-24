@@ -30,7 +30,7 @@ class TBDCUpdateVote extends Model {
       },
       user: {
         relation: Model.BelongsToOneRelation,
-        modelClass: require('../user'),
+        modelClass: require('../users'),
         join: {
           from: 'tbdc_update_votes.userId',
           to: 'users.id'

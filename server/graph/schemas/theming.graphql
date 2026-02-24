@@ -44,6 +44,15 @@ type ThemingMutation {
     chatEnabled: Boolean
     movideskChatKey: String
   ): DefaultResponse @auth(requires: ["manage:theme", "manage:system"])
+  setMovideskConfig(
+    movideskEnabled: Boolean!
+    movideskChatKey: String!
+    movideskCodeReference: String
+    movideskOrganizationCodeReference: String
+    movideskStayConnected: Boolean
+    movideskEmptySubject: Boolean
+    movideskStartChat: Boolean
+  ): DefaultResponse @auth(requires: ["manage:theme", "manage:system"])
 }
 
 # -----------------------------------------------
@@ -69,6 +78,12 @@ type ThemingConfig {
   neutralColor: String
   chatEnabled: Boolean
   movideskChatKey: String
+  movideskEnabled: Boolean
+  movideskCodeReference: String
+  movideskOrganizationCodeReference: String
+  movideskStayConnected: Boolean
+  movideskEmptySubject: Boolean
+  movideskStartChat: Boolean
 }
 
 type ThemingTheme {

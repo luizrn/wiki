@@ -15,6 +15,7 @@ v-container(fluid, grid-list-lg)
       v-tabs.mt-3.animated.fadeInUp(v-model='activeTab', background-color='transparent', color='primary')
         v-tab(key='products') Produtos & Módulos
         v-tab(key='staff') Equipe (CS / Implantadores)
+        v-tab(key='levels') Níveis de Permissão
 
       v-tabs-items(v-model='activeTab')
         //- TAB: PRODUTOS & MÓDULOS
@@ -82,6 +83,26 @@ v-container(fluid, grid-list-lg)
                     v-btn(icon, small, color='red', @click='deleteStaff(item)')
                       v-icon(small) mdi-delete
 
+        //- TAB: NÍVEIS DE PERMISSÃO
+        v-tab-item(:value='2')
+          v-card(flat, :class='$vuetify.theme.dark ? "grey darken-4" : "grey lighten-5"')
+            v-card-text.pa-4
+              .d-flex.mb-4
+                v-btn(color='primary', depressed, @click='editLevel({})')
+                  v-icon(left) mdi-plus
+                  span Adicionar Nível
+              v-card(outlined)
+                v-data-table(:items='permissionLevels', :headers='levelHeaders', :loading='loading', hide-default-footer)
+                  template(v-slot:item.preview='{ item }')
+                    v-chip(small, :color='item.color || "grey"', dark) {{ item.label }}
+                  template(v-slot:item.isActive='{ item }')
+                    v-chip(small, :color='item.isActive ? "green" : "grey"', dark) {{ item.isActive ? 'Ativo' : 'Inativo' }}
+                  template(v-slot:item.actions='{ item }')
+                    v-btn(icon, small, @click='editLevel(item)')
+                      v-icon(small) mdi-pencil
+                    v-btn(icon, small, color='red', @click='deleteLevel(item)')
+                      v-icon(small) mdi-delete
+
   //- DIALOGS
   //- Product Edit
   v-dialog(v-model='productDialog', max-width='500')
@@ -89,7 +110,7 @@ v-container(fluid, grid-list-lg)
       .dialog-header {{ editObj.id ? 'Editar Produto' : 'Novo Produto' }}
       v-card-text.pt-5
         v-text-field(v-model='editObj.name', label='Nome do Produto', outlined, @keyup.enter='saveProduct')
-      v-card-chin
+      v-card-actions
         v-spacer
         v-btn(text, @click='productDialog = false') Cancelar
         v-btn(color='primary', @click='saveProduct') Salvar
@@ -100,7 +121,7 @@ v-container(fluid, grid-list-lg)
       .dialog-header {{ editObj.id ? 'Editar Módulo' : 'Novo Módulo' }}
       v-card-text.pt-5
         v-text-field(v-model='editObj.name', label='Nome do Módulo', outlined, @keyup.enter='saveModule')
-      v-card-chin
+      v-card-actions
         v-spacer
         v-btn(text, @click='moduleDialog = false') Cancelar
         v-btn(color='primary', @click='saveModule') Salvar
@@ -113,10 +134,29 @@ v-container(fluid, grid-list-lg)
         v-text-field(v-model='editObj.name', label='Nome', outlined)
         v-text-field(v-model='editObj.email', label='Email', outlined)
         v-select(v-model='editObj.role', :items='roles', label='Cargo', outlined)
-      v-card-chin
+      v-card-actions
         v-spacer
         v-btn(text, @click='staffDialog = false') Cancelar
         v-btn(color='primary', @click='saveStaff') Salvar
+
+  //- Permission Level Edit
+  v-dialog(v-model='levelDialog', max-width='620')
+    v-card
+      .dialog-header {{ editObj.id ? 'Editar Nível de Permissão' : 'Novo Nível de Permissão' }}
+      v-card-text.pt-5
+        v-text-field(v-model='editObj.code', label='Código (ex: GREEN)', outlined)
+        v-text-field(v-model='editObj.label', label='Label', outlined)
+        v-text-field(v-model='editObj.description', label='Descrição', outlined)
+        v-row
+          v-col(cols='6')
+            v-text-field(v-model='editObj.color', label='Cor HEX', outlined)
+          v-col(cols='6')
+            v-text-field(v-model.number='editObj.order', label='Ordem', type='number', outlined)
+        v-switch(v-model='editObj.isActive', label='Ativo')
+      v-card-actions
+        v-spacer
+        v-btn(text, @click='levelDialog = false') Cancelar
+        v-btn(color='primary', @click='saveLevel') Salvar
 
 </template>
 
@@ -135,12 +175,23 @@ export default {
       productDialog: false,
       moduleDialog: false,
       staffDialog: false,
+      levelDialog: false,
       editObj: {},
       roles: ['CS', 'IMPLANTADOR'],
+      permissionLevels: [],
       staffHeaders: [
         { text: 'Nome', value: 'name' },
         { text: 'Email', value: 'email' },
         { text: 'Cargo', value: 'role' },
+        { text: 'Ações', value: 'actions', sortable: false, width: 100 }
+      ],
+      levelHeaders: [
+        { text: 'Preview', value: 'preview', sortable: false, width: 170 },
+        { text: 'Código', value: 'code', width: 140 },
+        { text: 'Label', value: 'label' },
+        { text: 'Descrição', value: 'description' },
+        { text: 'Ordem', value: 'order', width: 90 },
+        { text: 'Status', value: 'isActive', width: 90 },
         { text: 'Ações', value: 'actions', sortable: false, width: 100 }
       ]
     }
@@ -149,6 +200,7 @@ export default {
     async refresh() {
       await this.$apollo.queries.products.refetch()
       await this.$apollo.queries.staff.refetch()
+      await this.$apollo.queries.permissionLevels.refetch()
     },
     editProduct(p) {
       this.editObj = _.cloneDeep(p)
@@ -207,6 +259,68 @@ export default {
           await this.refresh()
         } catch (err) { this.$store.commit('pushGraphError', err) }
       }
+    },
+    editLevel(level) {
+      this.editObj = _.assign({
+        id: null,
+        code: '',
+        label: '',
+        description: '',
+        color: '#607D8B',
+        order: 0,
+        isActive: true
+      }, _.cloneDeep(level))
+      this.levelDialog = true
+    },
+    async saveLevel() {
+      try {
+        await this.$apollo.mutate({
+          mutation: gql`
+            mutation($id: Int, $code: String!, $label: String!, $description: String, $color: String!, $order: Int, $isActive: Boolean) {
+              tbdc {
+                savePermissionLevel(id: $id, code: $code, label: $label, description: $description, color: $color, order: $order, isActive: $isActive) {
+                  id
+                }
+              }
+            }
+          `,
+          variables: {
+            id: this.editObj.id,
+            code: _.toUpper(_.trim(this.editObj.code || '')),
+            label: _.trim(this.editObj.label || ''),
+            description: _.trim(this.editObj.description || ''),
+            color: _.trim(this.editObj.color || '#607D8B'),
+            order: _.toSafeInteger(this.editObj.order) || 0,
+            isActive: !!this.editObj.isActive
+          }
+        })
+        this.levelDialog = false
+        await this.refresh()
+      } catch (err) { this.$store.commit('pushGraphError', err) }
+    },
+    async deleteLevel(item) {
+      if (!confirm(`Excluir nível ${item.label}?`)) return
+      try {
+        await this.$apollo.mutate({
+          mutation: gql`mutation($id: Int!) { tbdc { deletePermissionLevel(id: $id) } }`,
+          variables: { id: item.id }
+        })
+        await this.refresh()
+      } catch (err) { this.$store.commit('pushGraphError', err) }
+    }
+  },
+  computed: {
+    canManage() {
+      return _.includes(_.get(this.$store, 'state.user.permissions', []), 'manage:system')
+    }
+  },
+  created() {
+    if (!this.canManage) {
+      this.$store.commit('showNotification', {
+        message: 'Você não tem permissão para acessar os dados mestres.',
+        style: 'warning'
+      })
+      this.$router.push('/')
     }
   },
   apollo: {
@@ -220,6 +334,10 @@ export default {
     staff: {
       query: gql`query { tbdc { staff { id name email role } } }`,
       update: data => data.tbdc.staff
+    },
+    permissionLevels: {
+      query: gql`query { tbdc { permissionLevels { id code label description color order isActive } } }`,
+      update: data => _.orderBy(data.tbdc.permissionLevels || [], ['order', 'label'], ['asc', 'asc'])
     }
   }
 }

@@ -21,7 +21,7 @@
       v-flex(xs5, md4)
         v-toolbar.nav-header-inner(:color='headerColor', dark, flat, :class='$vuetify.rtl ? `pr-3` : `pl-3`')
           v-avatar(tile, size='34', @click='goHome')
-            v-img.org-logo(:src='logoUrl')
+            v-img.org-logo(:src='brandLogoUrl')
           //- v-menu(open-on-hover, offset-y, bottom, left, min-width='250', transition='slide-y-transition')
           //-   template(v-slot:activator='{ on }')
           //-     v-app-bar-nav-icon.btn-animate-app(v-on='on', :class='$vuetify.rtl ? `mx-0` : ``')
@@ -194,6 +194,9 @@
                 v-list-item.pl-4(@click='exportArticle(`docx`)')
                   v-list-item-avatar(size='24', tile): v-icon(color='blue darken-2') mdi-file-word
                   v-list-item-title.body-2 DOCX
+                v-list-item.pl-4(@click='exportArticle(`md`)')
+                  v-list-item-avatar(size='24', tile): v-icon(color='teal darken-2') mdi-language-markdown-outline
+                  v-list-item-title.body-2 Markdown (.md)
                 v-list-item.pl-4(@click='exportArticle(`pptx`)')
                   v-list-item-avatar(size='24', tile): v-icon(color='orange darken-2') mdi-file-powerpoint
                   v-list-item-title.body-2 PPTX
@@ -226,7 +229,7 @@
 
           v-tooltip(bottom, v-if='isAuthenticated && isAdmin')
             template(v-slot:activator='{ on }')
-              v-btn(icon, tile, height='64', v-on='on', href='/a/tbdc-companies', aria-label='Permissões TBDC')
+              v-btn(icon, tile, height='64', v-on='on', href='/tbdc-companies', aria-label='Permissões TBDC')
                 v-icon(color='grey') mdi-shield-account
             span Permissões TBDC
 
@@ -353,11 +356,12 @@
                 v-icon(color='grey') mdi-account-circle
             span {{$t('common:header.login')}}
 
-    page-selector(mode='create', v-model='newPageModal', :open-handler='pageNewCreate', :locale='locale')
-    page-selector(mode='move', v-model='movePageModal', :open-handler='pageMoveRename', :path='path', :locale='locale')
-    page-selector(mode='create', v-model='duplicateOpts.modal', :open-handler='pageDuplicateHandle', :path='duplicateOpts.path', :locale='duplicateOpts.locale')
-    page-delete(v-model='deletePageModal', v-if='path && path.length')
-    page-convert(v-model='convertPageModal', v-if='path && path.length')
+      page-selector(mode='create', v-model='newPageModal', :open-handler='pageNewCreate', :locale='locale')
+      page-selector(mode='move', v-model='movePageModal', :open-handler='pageMoveRename', :path='path', :locale='locale')
+      page-selector(mode='create', v-model='duplicateOpts.modal', :open-handler='pageDuplicateHandle', :path='duplicateOpts.path', :locale='duplicateOpts.locale')
+      page-delete(v-model='deletePageModal', v-if='path && path.length')
+      page-convert(v-model='convertPageModal', v-if='path && path.length')
+      movidesk-chat-loader(v-if='isAuthenticated && !isAdminArea')
 
 </template>
 
@@ -482,6 +486,9 @@ export default {
     isAdmin () {
       return _.intersection(this.permissions, ['manage:system', 'write:users', 'manage:users', 'write:groups', 'manage:groups', 'manage:navigation', 'manage:theme', 'manage:api']).length > 0
     },
+    canManageSystem () {
+      return _.includes(this.permissions, 'manage:system')
+    },
     hasNewPagePermission () {
       return this.hasAdminPermission || _.intersection(this.permissions, ['write:pages']).length > 0
     },
@@ -500,9 +507,20 @@ export default {
       return !!this.path && this.mode !== 'edit' && ['view', 'history', 'source'].includes(this.mode) && this.hasReadPagesPermission
     },
     totalNotificationCount () {
-      return this.unreadCount + (this.isAdmin ? this.pendingPublicLinks.length : 0)
+      return this.unreadCount + (this.canManageSystem ? this.pendingPublicLinks.length : 0)
     },
-    headerColor: get('site/headerColor')
+    isAdminArea () {
+      return this.mode === 'admin' || (window.location && window.location.pathname && window.location.pathname.indexOf('/a') === 0)
+    },
+    headerColor: get('site/headerColor'),
+    brandLogoUrl () {
+      const defaultTbdcLogo = '/_assets/img/tbdc-agro-logo.png'
+      const currentLogo = _.trim(this.logoUrl || '')
+      if (!currentLogo) {
+        return defaultTbdcLogo
+      }
+      return currentLogo
+    }
   },
   created () {
     if (this.hideSearch || this.dense || this.$vuetify.breakpoint.smAndDown) {
@@ -639,7 +657,7 @@ export default {
           this.$apollo.queries.notifications.refetch(),
           this.$apollo.queries.unreadCount.refetch()
         ]
-        if (this.isAdmin && this.$apollo.queries.pendingPublicLinks) {
+        if (this.canManageSystem && this.$apollo.queries.pendingPublicLinks) {
           requests.push(this.$apollo.queries.pendingPublicLinks.refetch())
         }
         await Promise.all(requests)
@@ -822,7 +840,7 @@ export default {
         }
       `,
       skip () {
-        return !this.isAuthenticated || !this.isAdmin
+        return !this.isAuthenticated || !this.canManageSystem
       },
       pollInterval: 30000,
       fetchPolicy: 'network-only',

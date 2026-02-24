@@ -148,10 +148,6 @@ module.exports = {
               algorithms: ['RS256']
             })
 
-            if (!_.includes(user.permissions, 'manage:system')) {
-              throw new Error('Forbidden')
-            }
-
             return { user }
           } catch (err) {
             throw new Error('Unauthorized')

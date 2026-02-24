@@ -11,6 +11,7 @@ RUN apk add --no-cache yarn g++ make cmake python3
 WORKDIR /wiki
 
 COPY package.json ./
+COPY yarn.lock ./
 COPY .babelrc ./
 COPY .eslintignore ./
 COPY .eslintrc.yml ./
@@ -42,9 +43,12 @@ WORKDIR /wiki
 
 COPY patches ./patches
 COPY package.json ./
+COPY yarn.lock ./
 COPY .npmrc ./
 
-RUN yarn --production --frozen-lockfile --non-interactive && \
+RUN apk add --no-cache yarn && \
+    yarn --production --frozen-lockfile --non-interactive && \
+    npm install -g patch-package && \
     npx patch-package && \
     yarn cache clean
 

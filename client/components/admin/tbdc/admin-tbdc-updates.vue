@@ -116,7 +116,6 @@ v-container(fluid, grid-list-lg)
 </template>
 
 <script>
-/* global WIKI */
 import gql from 'graphql-tag'
 
 export default {

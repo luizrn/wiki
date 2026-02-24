@@ -41,8 +41,8 @@ export default {
       this.activeModal = ''
     },
     overwriteAndClose() {
-      this.$root.$emit('overwriteEditorContent')
-      this.$root.$emit('resetEditorConflict')
+      this.$root.$emit('overwrite-editor-content')
+      this.$root.$emit('reset-editor-conflict')
       this.close()
     },
     send (msg) {
@@ -77,7 +77,7 @@ export default {
           }
           case 'export': {
             const svgDataStart = msg.data.indexOf('base64,') + 7
-            this.$root.$emit('editorInsert', {
+            this.$root.$emit('editor-insert', {
               kind: 'DIAGRAM',
               text: msg.data.slice(svgDataStart)
               // text: msg.xml.replace(/ agent="(.*?)"/, '').replace(/ host="(.*?)"/, '').replace(/ etag="(.*?)"/, '')

@@ -89,7 +89,6 @@
 </template>
 
 <script>
-/* global WIKI */
 import gql from 'graphql-tag'
 import moment from 'moment'
 
@@ -118,7 +117,7 @@ export default {
     await this.refresh()
     // Marcar como lido ao abrir
     localStorage.setItem('tbdc_updates_last_read', new Date().toISOString())
-    this.$root.$emit('tbdcUpdatesRead')
+    this.$root.$emit('tbdc-updates-read')
   },
   methods: {
     async refresh() {

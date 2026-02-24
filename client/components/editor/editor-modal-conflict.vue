@@ -129,8 +129,8 @@ export default {
     },
     overwriteAndClose() {
       this.checkoutDateActive = this.latest.updatedAt
-      this.$root.$emit('overwriteEditorContent')
-      this.$root.$emit('resetEditorConflict')
+      this.$root.$emit('overwrite-editor-content')
+      this.$root.$emit('reset-editor-conflict')
       this.close()
     },
     useLocal () {

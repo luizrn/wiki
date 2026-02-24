@@ -226,7 +226,7 @@ export default {
 
     // Render initial preview
 
-    this.$root.$on('editorInsert', opts => {
+    this.$root.$on('editor-insert', opts => {
       switch (opts.kind) {
         case 'IMAGE':
           let img = `<img src="${opts.path}" alt="${opts.text}"`
@@ -247,15 +247,15 @@ export default {
     })
 
     // Handle save conflict
-    this.$root.$on('saveConflict', () => {
+    this.$root.$on('save-conflict', () => {
       this.toggleModal(`editorModalConflict`)
     })
-    this.$root.$on('overwriteEditorContent', () => {
+    this.$root.$on('overwrite-editor-content', () => {
       this.cm.setValue(this.$store.get('editor/content'))
     })
   },
   beforeDestroy() {
-    this.$root.$off('editorInsert')
+    this.$root.$off('editor-insert')
   }
 }
 </script>

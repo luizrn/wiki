@@ -153,6 +153,8 @@ import 'codemirror/addon/fold/foldgutter.js'
 import 'codemirror/addon/fold/foldgutter.css'
 import cmFold from './common/cmFold'
 
+/* global siteLangs, siteConfig */
+
 // ========================================
 // INIT
 // ========================================
@@ -451,7 +453,7 @@ export default {
     // Render initial preview
     this.processContent(this.$store.get('editor/content'))
 
-    this.$root.$on('editorInsert', opts => {
+    this.$root.$on('editor-insert', opts => {
       switch (opts.kind) {
         case 'IMAGE':
           let img = `image::${opts.path}[${opts.text}]`
@@ -474,15 +476,15 @@ export default {
     })
 
     // Handle save conflict
-    this.$root.$on('saveConflict', () => {
+    this.$root.$on('save-conflict', () => {
       this.toggleModal(`editorModalConflict`)
     })
-    this.$root.$on('overwriteEditorContent', () => {
+    this.$root.$on('overwrite-editor-content', () => {
       this.cm.setValue(this.$store.get('editor/content'))
     })
   },
   beforeDestroy() {
-    this.$root.$off('editorInsert')
+    this.$root.$off('editor-insert')
   }
 }
 </script>

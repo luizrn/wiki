@@ -371,7 +371,7 @@ export default {
     insert () {
       const asset = _.find(this.assets, ['id', this.currentFileId])
       const assetPath = this.folderTree.map(f => f.slug).join('/')
-      this.$root.$emit('editorInsert', {
+      this.$root.$emit('editor-insert', {
         kind: asset.kind,
         path: this.currentFolderId > 0 ? `/${assetPath}/${asset.filename}` : `/${asset.filename}`,
         text: asset.filename,

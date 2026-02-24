@@ -138,9 +138,9 @@ export default {
         })
 
         if (isNew) {
-           this.selectedWebhookId = null
+          this.selectedWebhookId = null
         } else {
-           this.initialWebhook = _.cloneDeep(this.webhook)
+          this.initialWebhook = _.cloneDeep(this.webhook)
         }
       } catch (err) {
         this.$store.commit('pushGraphError', err)

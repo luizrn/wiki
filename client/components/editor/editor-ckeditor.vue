@@ -99,7 +99,7 @@ export default {
       this.$store.set('editor/content', beautify(this.editor.getData(), { indent_size: 2, end_with_newline: true }))
     }, 300))
 
-    this.$root.$on('editorInsert', opts => {
+    this.$root.$on('editor-insert', opts => {
       switch (opts.kind) {
         case 'IMAGE':
           this.editor.execute('imageInsert', {
@@ -124,10 +124,10 @@ export default {
     })
 
     // Handle save conflict
-    this.$root.$on('saveConflict', () => {
+    this.$root.$on('save-conflict', () => {
       this.isConflict = true
     })
-    this.$root.$on('overwriteEditorContent', () => {
+    this.$root.$on('overwrite-editor-content', () => {
       this.editor.setData(this.$store.get('editor/content'))
     })
   },

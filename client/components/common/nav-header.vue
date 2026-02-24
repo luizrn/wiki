@@ -378,28 +378,28 @@ export default {
     if (this.isAuthenticated) {
       this.checkUnreadUpdates()
     }
-    this.$root.$on('tbdcUpdatesRead', () => {
+    this.$root.$on('tbdc-updates-read', () => {
       this.hasUnreadUpdates = false
     })
-    this.$root.$on('pageEdit', () => {
+    this.$root.$on('page-edit', () => {
       this.pageEdit()
     })
-    this.$root.$on('pageHistory', () => {
+    this.$root.$on('page-history', () => {
       this.pageHistory()
     })
-    this.$root.$on('pageSource', () => {
+    this.$root.$on('page-source', () => {
       this.pageSource()
     })
-    this.$root.$on('pageMove', () => {
+    this.$root.$on('page-move', () => {
       this.pageMove()
     })
-    this.$root.$on('pageConvert', () => {
+    this.$root.$on('page-convert', () => {
       this.pageConvert()
     })
-    this.$root.$on('pageDuplicate', () => {
+    this.$root.$on('page-duplicate', () => {
       this.pageDuplicate()
     })
-    this.$root.$on('pageDelete', () => {
+    this.$root.$on('page-delete', () => {
       this.pageDelete()
     })
   },

@@ -256,7 +256,7 @@ export default {
       }
     }
 
-    this.$root.$on('resetEditorConflict', () => {
+    this.$root.$on('reset-editor-conflict', () => {
       this.isConflict = false
     })
 
@@ -274,7 +274,7 @@ export default {
       this.dialogProgress = false
     },
     openConflict() {
-      this.$root.$emit('saveConflict')
+      this.$root.$emit('save-conflict')
     },
     async save({ rethrow = false, overwrite = false } = {}) {
       this.showProgressDialog('saving')
@@ -392,7 +392,7 @@ export default {
             }
           })
           if (_.get(conflictResp, 'data.pages.checkConflicts', false)) {
-            this.$root.$emit('saveConflict')
+            this.$root.$emit('save-conflict')
             throw new Error(this.$t('editor:conflict.warning'))
           }
 

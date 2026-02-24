@@ -455,12 +455,12 @@ export default {
     }
   },
   mounted () {
-    this.$root.$on('editorInsert', opts => {
+    this.$root.$on('editor-insert', opts => {
       this.config.logoUrl = opts.path
     })
   },
   beforeDestroy() {
-    this.$root.$off('editorInsert')
+    this.$root.$off('editor-insert')
   },
   apollo: {
     config: {

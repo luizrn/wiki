@@ -204,9 +204,9 @@ export default {
             initials += _.last(nameParts).charAt(0)
           }
           c.initials = initials
-          c.avatarUrl = c.pictureUrl === 'internal'
-            ? `/_userav/${c.authorId}`
-            : c.pictureUrl
+          c.avatarUrl = c.pictureUrl === 'internal' ?
+            `/_userav/${c.authorId}` :
+            c.pictureUrl
           return c
         })
       } catch (err) {

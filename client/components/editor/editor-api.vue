@@ -384,7 +384,7 @@ export default {
     }
   },
   beforeDestroy() {
-    this.$root.$off('editorInsert')
+    this.$root.$off('editor-insert')
   }
 }
 </script>

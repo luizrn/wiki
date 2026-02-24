@@ -83,14 +83,14 @@ export default {
     },
     useLocal () {
       this.$store.set('editor/checkoutDateActive', this.latest.updatedAt)
-      this.$root.$emit('resetEditorConflict')
+      this.$root.$emit('reset-editor-conflict')
       this.close()
     },
     useRemote () {
       this.$store.set('editor/checkoutDateActive', this.latest.updatedAt)
       this.$store.set('editor/content', this.latest.content)
-      this.$root.$emit('overwriteEditorContent')
-      this.$root.$emit('resetEditorConflict')
+      this.$root.$emit('overwrite-editor-content')
+      this.$root.$emit('reset-editor-conflict')
       this.close()
     }
   },

@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const { createApolloFetch } = require('apollo-fetch')
+const graphFetch = require('../helpers/graph-fetch')
 const { v4: uuid } = require('uuid')
 const os = require('os')
 const fs = require('fs-extra')
@@ -26,10 +26,6 @@ module.exports = {
     if (WIKI.devMode || !this.enabled) { return }
 
     try {
-      const apollo = createApolloFetch({
-        uri: WIKI.config.graphEndpoint
-      })
-
       // Platform detection
       let platform = 'LINUX'
       let isDockerized = false
@@ -76,7 +72,7 @@ module.exports = {
       }
 
       // Send Event
-      const respStrings = await apollo({
+      const respStrings = await graphFetch({
         query: `mutation (
           $version: String!
           $platform: TelemetryPlatform!

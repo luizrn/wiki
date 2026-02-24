@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const { createApolloFetch } = require('apollo-fetch')
+const graphFetch = require('../helpers/graph-fetch')
 
 /* global WIKI */
 
@@ -7,13 +7,9 @@ module.exports = async () => {
   WIKI.logger.info('Syncing locales with Graph endpoint...')
 
   try {
-    const apollo = createApolloFetch({
-      uri: WIKI.config.graphEndpoint
-    })
-
     // -> Fetch locales list
 
-    const respList = await apollo({
+    const respList = await graphFetch({
       query: `{
         localization {
           locales {
@@ -38,7 +34,7 @@ module.exports = async () => {
       for (const currentLocale of activeLocales) {
         const localeInfo = _.find(locales, ['code', currentLocale])
 
-        const respStrings = await apollo({
+        const respStrings = await graphFetch({
           query: `query ($code: String!) {
             localization {
               strings(code: $code) {

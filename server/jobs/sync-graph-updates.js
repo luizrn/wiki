@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const { createApolloFetch } = require('apollo-fetch')
+const graphFetch = require('../helpers/graph-fetch')
 
 /* global WIKI */
 
@@ -7,11 +7,7 @@ module.exports = async () => {
   WIKI.logger.info(`Fetching latest updates from Graph endpoint...`)
 
   try {
-    const apollo = createApolloFetch({
-      uri: WIKI.config.graphEndpoint
-    })
-
-    const resp = await apollo({
+    const resp = await graphFetch({
       query: `query ($channel: ReleaseChannel!, $version: String!) {
         releases {
           checkForUpdates(channel: $channel, version: $version) {

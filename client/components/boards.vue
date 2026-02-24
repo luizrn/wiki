@@ -187,10 +187,20 @@ const M = {
 export default {
   components: { draggable },
   data: () => ({
-    boards: [], groups: [], teams: [], board: null, users: [], selectedBoardId: null,
-    showCreateBoard: false, showBoardSettings: false, showStage: false, showCard: false, showTeam: false,
+    boards: [],
+    groups: [],
+    teams: [],
+    board: null,
+    users: [],
+    selectedBoardId: null,
+    showCreateBoard: false,
+    showBoardSettings: false,
+    showStage: false,
+    showCard: false,
+    showTeam: false,
     fBoard: { title: '', description: '', color: '#1976d2', icon: 'mdi-view-kanban', isPublic: false, isArchived: false, groupIds: [] },
-    fGroups: [], fTeamIds: [],
+    fGroups: [],
+    fTeamIds: [],
     fStage: { id: null, title: '', color: '#90a4ae', wipLimit: null, isDone: false },
     fCard: { id: null, stageId: null, title: '', description: '', priority: 'medium', status: 'open', startDate: '', dueDate: '', assigneeId: null, estimatePoints: null, coverColor: '', labels: [], checklist: [], attachments: [], watchers: [], customFields: '{}' },
     fTeam: { id: null, name: '', description: '', color: '#546e7a', isArchived: false, memberIds: [], boardIds: [] }
@@ -259,10 +269,22 @@ export default {
     },
     openCard(c = {}) {
       this.fCard = {
-        id: c.id || null, stageId: c.stageId || c.stageId || null, title: c.title || '', description: c.description || '',
-        priority: c.priority || 'medium', status: c.status || 'open', startDate: c.startDate || '', dueDate: c.dueDate || '',
-        assigneeId: c.assigneeId || null, estimatePoints: c.estimatePoints || null, coverColor: c.coverColor || '',
-        labels: c.labels || [], checklist: c.checklist || [], attachments: c.attachments || [], watchers: c.watchers || [], customFields: c.customFields || '{}'
+        id: c.id || null,
+        stageId: c.stageId || c.stageId || null,
+        title: c.title || '',
+        description: c.description || '',
+        priority: c.priority || 'medium',
+        status: c.status || 'open',
+        startDate: c.startDate || '',
+        dueDate: c.dueDate || '',
+        assigneeId: c.assigneeId || null,
+        estimatePoints: c.estimatePoints || null,
+        coverColor: c.coverColor || '',
+        labels: c.labels || [],
+        checklist: c.checklist || [],
+        attachments: c.attachments || [],
+        watchers: c.watchers || [],
+        customFields: c.customFields || '{}'
       }
       this.showCard = true
     },
@@ -288,8 +310,8 @@ export default {
       await this.selectBoard(this.board.id)
     },
     openTeam(t = null) {
-      this.fTeam = t ? { id: t.id, name: t.name, description: t.description || '', color: t.color || '#546e7a', isArchived: !!t.isArchived, memberIds: (t.members || []).map(m => m.id), boardIds: t.boardIds || [] }
-        : { id: null, name: '', description: '', color: '#546e7a', isArchived: false, memberIds: [], boardIds: this.board ? [this.board.id] : [] }
+      this.fTeam = t ? { id: t.id, name: t.name, description: t.description || '', color: t.color || '#546e7a', isArchived: !!t.isArchived, memberIds: (t.members || []).map(m => m.id), boardIds: t.boardIds || [] } :
+        { id: null, name: '', description: '', color: '#546e7a', isArchived: false, memberIds: [], boardIds: this.board ? [this.board.id] : [] }
       this.showTeam = true
     },
     async saveTeam() {

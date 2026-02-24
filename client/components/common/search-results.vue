@@ -118,7 +118,7 @@ export default {
     }
   },
   mounted() {
-    this.$root.$on('searchMove', (dir) => {
+    this.$root.$on('search-move', (dir) => {
       this.cursor += ((dir === 'up') ? -1 : 1)
       if (this.cursor < -1) {
         this.cursor = -1
@@ -126,7 +126,7 @@ export default {
         this.cursor = this.results.length + this.suggestions.length - 1
       }
     })
-    this.$root.$on('searchEnter', () => {
+    this.$root.$on('search-enter', () => {
       if (!this.results) {
         return
       }

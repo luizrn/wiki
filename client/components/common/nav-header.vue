@@ -507,10 +507,10 @@ export default {
       }
     },
     searchEnter () {
-      this.$root.$emit('searchEnter', true)
+      this.$root.$emit('search-enter', true)
     },
     searchMove(dir) {
-      this.$root.$emit('searchMove', dir)
+      this.$root.$emit('search-move', dir)
     },
     pageNew () {
       this.newPageModal = true

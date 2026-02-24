@@ -7,7 +7,8 @@ ENV CYPRESS_INSTALL_BINARY=0
 ENV NODE_OPTIONS=--openssl-legacy-provider
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 
-RUN apk add --no-cache yarn g++ make cmake python3
+RUN apk add --no-cache g++ make cmake python3
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 WORKDIR /wiki
 
@@ -19,7 +20,7 @@ COPY .eslintrc.yml ./
 COPY patches ./patches
 
 RUN yarn cache clean && \
-    yarn --non-interactive && \
+    yarn --non-interactive --link-duplicates --ignore-optional && \
     yarn cache clean
 
 COPY client ./client
@@ -29,7 +30,7 @@ RUN node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider \
     node ./node_modules/.bin/webpack --profile --config dev/webpack/webpack.prod.js
 
 # Reduce final runtime footprint and avoid double dependency installs in parallel stages.
-RUN yarn --production --non-interactive && \
+RUN yarn --production --non-interactive --link-duplicates --ignore-optional && \
     yarn cache clean && \
     rm -rf /tmp/.yarn-cache
 

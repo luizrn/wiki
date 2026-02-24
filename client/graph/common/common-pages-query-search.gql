@@ -1,6 +1,16 @@
-query ($query: String!) {
+query (
+  $query: String!
+  $filterPermissions: Boolean
+  $filterPages: Boolean
+  $filterUpdates: Boolean
+) {
   pages {
-    search(query:$query) {
+    search(
+      query: $query
+      filterPermissions: $filterPermissions
+      filterPages: $filterPages
+      filterUpdates: $filterUpdates
+    ) {
       results {
         id
         title

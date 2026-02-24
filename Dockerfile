@@ -29,10 +29,8 @@ COPY dev ./dev
 RUN node ./node_modules/.bin/cross-env NODE_OPTIONS=--openssl-legacy-provider \
     node ./node_modules/.bin/webpack --profile --config dev/webpack/webpack.prod.js
 
-# Reduce final runtime footprint and avoid double dependency installs in parallel stages.
-RUN yarn --production --non-interactive --link-duplicates --ignore-optional && \
-    yarn cache clean && \
-    rm -rf /tmp/.yarn-cache
+# Keep a single dependency install to avoid ENOSPC on constrained builders.
+RUN rm -rf /tmp/.yarn-cache
 
 # ============================================================
 # Stage 2: Production image

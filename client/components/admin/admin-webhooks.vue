@@ -8,7 +8,7 @@ v-container(fluid, grid-list-lg)
           .headline.primary--text.animated.fadeInLeft Webhooks
           .subtitle-1.grey--text.animated.fadeInLeft.wait-p4s Configure outgoing webhooks for system events.
         v-spacer
-        v-btn.animated.fadeInDown(color='success', depressed, @click='save', large, :disabled='!isDirty')
+        v-btn.animated.fadeInDown(color='success', depressed, @click='save', large, :disabled='!canSave', :loading='saving')
           v-icon(left) check
           span {{$t('common:actions.apply')}}
 
@@ -36,9 +36,9 @@ v-container(fluid, grid-list-lg)
         v-toolbar(color='primary', dense, flat, dark)
           .subtitle-1 {{webhook.title || 'New Webhook'}}
           v-spacer
-          v-btn(icon, small, @click='testWebhook', :disabled='!webhook.id')
+          v-btn(icon, small, @click='testWebhook', :disabled='!webhook.id', :loading='testing')
             v-icon mdi-play
-          v-btn(icon, small, @click='deleteWebhook', :disabled='!webhook.id')
+          v-btn(icon, small, @click='deleteWebhook', :disabled='!webhook.id', :loading='deleting')
             v-icon mdi-delete
         v-card-text
           v-form
@@ -83,6 +83,9 @@ export default {
       },
       selectedWebhookId: null,
       initialWebhook: {},
+      saving: false,
+      testing: false,
+      deleting: false,
       availableEvents: [
         'page:created',
         'page:updated',
@@ -96,18 +99,43 @@ export default {
   },
   computed: {
     isDirty() {
+      if (this.selectedWebhookId === null) {
+        return false
+      }
       return !_.isEqual(this.webhook, this.initialWebhook)
+    },
+    canSave() {
+      return this.isDirty && this.isWebhookValid(this.webhook)
     }
   },
   methods: {
+    normalizeWebhook(hook) {
+      const events = _.isArray(hook.events) ? hook.events : []
+      return {
+        id: _.isFinite(hook.id) ? hook.id : null,
+        title: _.trim(hook.title || ''),
+        description: _.trim(hook.description || ''),
+        url: _.trim(hook.url || ''),
+        events: _.uniq(events.filter(Boolean)),
+        isEnabled: hook.isEnabled !== false,
+        secret: _.trim(hook.secret || '')
+      }
+    },
+    isWebhookValid(hook) {
+      if (_.isEmpty(_.trim(hook.title))) return false
+      if (_.isEmpty(_.trim(hook.url))) return false
+      if (!/^https?:\/\/.+/i.test(_.trim(hook.url))) return false
+      if (!_.isArray(hook.events) || hook.events.length < 1) return false
+      return true
+    },
     selectWebhook(hook) {
       this.selectedWebhookId = hook.id
-      this.webhook = _.cloneDeep(hook)
+      this.webhook = this.normalizeWebhook(hook)
       this.initialWebhook = _.cloneDeep(this.webhook)
     },
     addWebhook() {
-      this.selectedWebhookId = 0 // Using 0 for new unsaved webhook
-      this.webhook = {
+      this.selectedWebhookId = 0
+      const emptyHook = {
         id: null,
         title: '',
         description: '',
@@ -116,20 +144,31 @@ export default {
         isEnabled: true,
         secret: ''
       }
-      this.initialWebhook = {}
+      this.webhook = _.cloneDeep(emptyHook)
+      this.initialWebhook = _.cloneDeep(emptyHook)
     },
     async save() {
+      if (!this.isWebhookValid(this.webhook)) {
+        this.$store.commit('showNotification', {
+          style: 'warning',
+          message: 'Preencha título, URL válida e ao menos 1 evento.',
+          icon: 'alert'
+        })
+        return
+      }
+
       try {
+        this.saving = true
         const isNew = !this.webhook.id
         const mutation = isNew ? webhookMutationCreate : webhookMutationUpdate
-        const variables = _.cloneDeep(this.webhook)
+        const variables = _.cloneDeep(this.normalizeWebhook(this.webhook))
         if (isNew) delete variables.id
 
         await this.$apollo.mutate({
           mutation,
-          variables,
-          refetchQueries: [{ query: webhooksQueryList }]
+          variables
         })
+        await this.$apollo.queries.webhooks.refetch()
 
         this.$store.commit('showNotification', {
           style: 'success',
@@ -138,22 +177,31 @@ export default {
         })
 
         if (isNew) {
-          this.selectedWebhookId = null
+          const created = _.find(this.webhooks, w => w.title === variables.title && w.url === variables.url)
+          if (created) {
+            this.selectWebhook(created)
+          } else {
+            this.selectedWebhookId = null
+          }
         } else {
+          this.webhook = this.normalizeWebhook(this.webhook)
           this.initialWebhook = _.cloneDeep(this.webhook)
         }
       } catch (err) {
         this.$store.commit('pushGraphError', err)
+      } finally {
+        this.saving = false
       }
     },
     async deleteWebhook() {
       if (!confirm('Are you sure you want to delete this webhook?')) return
       try {
+        this.deleting = true
         await this.$apollo.mutate({
           mutation: webhookMutationDelete,
-          variables: { id: this.webhook.id },
-          refetchQueries: [{ query: webhooksQueryList }]
+          variables: { id: this.webhook.id }
         })
+        await this.$apollo.queries.webhooks.refetch()
         this.$store.commit('showNotification', {
           style: 'success',
           message: 'Webhook deleted successfully.',
@@ -162,10 +210,13 @@ export default {
         this.selectedWebhookId = null
       } catch (err) {
         this.$store.commit('pushGraphError', err)
+      } finally {
+        this.deleting = false
       }
     },
     async testWebhook() {
       try {
+        this.testing = true
         await this.$apollo.mutate({
           mutation: webhookMutationTest,
           variables: { id: this.webhook.id }
@@ -177,6 +228,8 @@ export default {
         })
       } catch (err) {
         this.$store.commit('pushGraphError', err)
+      } finally {
+        this.testing = false
       }
     }
   },
@@ -184,7 +237,7 @@ export default {
     webhooks: {
       query: webhooksQueryList,
       fetchPolicy: 'network-only',
-      update: (data) => data.webhooks.list,
+      update: (data) => _.map(_.get(data, 'webhooks.list', []), this.normalizeWebhook),
       watchLoading (isLoading) {
         this.$store.commit(`loading${isLoading ? 'Start' : 'Stop'}`, 'admin-webhooks-refresh')
       }

@@ -1,4 +1,5 @@
 exports.up = function (knex) {
+  const isPg = knex.client.config.client === 'pg'
   return knex.schema
     .createTable('webhooks', table => {
       table.increments('id').primary()
@@ -8,8 +9,13 @@ exports.up = function (knex) {
       table.string('url').notNullable()
       table.string('secret')
       table.boolean('isEnabled').defaultTo(true)
-      table.specificType('events', 'text[]')
-      table.jsonb('headers')
+      if (isPg) {
+        table.specificType('events', 'text[]')
+        table.jsonb('headers')
+      } else {
+        table.json('events')
+        table.json('headers')
+      }
       table.dateTime('createdAt').notNullable().defaultTo(knex.fn.now())
       table.dateTime('updatedAt').notNullable().defaultTo(knex.fn.now())
     })

@@ -1,6 +1,8 @@
 const graphHelper = require('../../helpers/graph')
 const _ = require('lodash')
 const CleanCSS = require('clean-css')
+const path = require('path')
+const fs = require('fs-extra')
 
 /* global WIKI */
 
@@ -13,11 +15,23 @@ module.exports = {
   },
   ThemingQuery: {
     async themes(obj, args, context, info) {
-      return [{ // TODO
-        key: 'default',
-        title: 'Default',
-        author: 'requarks.io'
-      }]
+      const themesPath = path.join(WIKI.ROOTPATH, 'client', 'themes')
+      let keys = []
+      try {
+        keys = (await fs.readdir(themesPath, { withFileTypes: true }))
+          .filter(d => d.isDirectory())
+          .map(d => d.name)
+      } catch (err) {}
+
+      if (_.isEmpty(keys)) {
+        keys = ['default']
+      }
+
+      return keys.map(key => ({
+        key,
+        title: _.startCase(key),
+        author: key === 'default' ? 'requarks.io' : 'custom'
+      }))
     },
     async config(obj, args, context, info) {
       return {

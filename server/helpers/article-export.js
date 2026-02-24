@@ -196,7 +196,10 @@ function applyCorporateMaster (slide, { title, subtitle, pageNo, totalSlides, ve
     const hasLogo = addBrandLogo(slide, brandLogo)
     if (!hasLogo) {
       slide.addText('TBDC', {
-        x: 0.45, y: 0.13, w: 1.4, h: 0.36,
+        x: 0.45,
+        y: 0.13,
+        w: 1.4,
+        h: 0.36,
         color: PPTX_THEME.white,
         fontFace: PPTX_FONT_TITLE,
         fontSize: 18,
@@ -204,7 +207,10 @@ function applyCorporateMaster (slide, { title, subtitle, pageNo, totalSlides, ve
       })
     }
     slide.addText(title || 'Apresentacao', {
-      x: 1.9, y: 0.16, w: 8.4, h: 0.32,
+      x: 1.9,
+      y: 0.16,
+      w: 8.4,
+      h: 0.32,
       color: PPTX_THEME.white,
       fontFace: PPTX_FONT_TITLE,
       fontSize: 14,
@@ -212,7 +218,10 @@ function applyCorporateMaster (slide, { title, subtitle, pageNo, totalSlides, ve
     })
     if (subtitle) {
       slide.addText(subtitle, {
-        x: 1.9, y: 0.42, w: 8.2, h: 0.2,
+        x: 1.9,
+        y: 0.42,
+        w: 8.2,
+        h: 0.2,
         color: 'C7D3E4',
         fontFace: PPTX_FONT_BODY,
         fontSize: 9
@@ -222,14 +231,20 @@ function applyCorporateMaster (slide, { title, subtitle, pageNo, totalSlides, ve
 
   slideFooter(slide)
   slide.addText(version, {
-    x: 9.9, y: 7.02, w: 2.3, h: 0.18,
+    x: 9.9,
+    y: 7.02,
+    w: 2.3,
+    h: 0.18,
     color: PPTX_THEME.accentSoft,
     fontFace: PPTX_FONT_BODY,
     fontSize: 7.5,
     align: 'right'
   })
   slide.addText(`${pageNo}/${totalSlides}`, {
-    x: 12.25, y: 7.02, w: 0.8, h: 0.18,
+    x: 12.25,
+    y: 7.02,
+    w: 0.8,
+    h: 0.18,
     color: PPTX_THEME.white,
     fontFace: PPTX_FONT_BODY,
     fontSize: 9,
@@ -271,7 +286,7 @@ async function generatePdf (page) {
   })
   writeFooter()
   doc.end()
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     doc.on('end', () => resolve(Buffer.concat(chunks)))
     doc.on('error', reject)
   })
@@ -315,7 +330,7 @@ async function generateXlsx (page) {
   lines.forEach((ln, i) => content.addRow({ lineNo: i + 1, text: ln }))
   content.getRow(1).font = { bold: true }
 
-  return await wb.xlsx.writeBuffer()
+  return wb.xlsx.writeBuffer()
 }
 
 async function generateDocx (page) {
@@ -351,7 +366,7 @@ async function generateDocx (page) {
       children
     }]
   })
-  return await Packer.toBuffer(doc)
+  return Packer.toBuffer(doc)
 }
 
 async function generatePptx (page) {
@@ -403,7 +418,10 @@ async function generatePptx (page) {
   cover.addShape('rect', { x: 9.2, y: 3.7, w: 3.2, h: 2.3, fill: { color: '1E2A3D' }, line: { color: PPTX_THEME.accent, pt: 1.2 } })
   cover.addText(`/${page.localeCode}/${page.path}`, { x: 9.35, y: 4.5, w: 2.9, h: 1.0, color: PPTX_THEME.white, fontFace: 'Consolas', fontSize: 11, align: 'center', valign: 'mid' })
   cover.addText(version, {
-    x: 0.85, y: 6.45, w: 4.8, h: 0.2,
+    x: 0.85,
+    y: 6.45,
+    w: 4.8,
+    h: 0.2,
     color: PPTX_THEME.accentSoft,
     fontFace: PPTX_FONT_BODY,
     fontSize: 9
@@ -428,24 +446,33 @@ async function generatePptx (page) {
     brandLogo: brandLogoPath
   })
   summary.addShape('roundRect', {
-    x: 0.85, y: 1.2, w: 11.8, h: 5.45,
+    x: 0.85,
+    y: 1.2,
+    w: 11.8,
+    h: 5.45,
     fill: { color: 'FFFFFF' },
     line: { color: 'DCE3EE', pt: 1 },
     radius: 0.1
   })
   summary.addText('Sumario', {
-    x: 1.15, y: 1.45, w: 8, h: 0.35,
+    x: 1.15,
+    y: 1.45,
+    w: 8,
+    h: 0.35,
     color: PPTX_THEME.dark,
     fontFace: PPTX_FONT_TITLE,
     fontSize: 24,
     bold: true
   })
   const uniqueSections = _.uniq(sectionSlides.map(s => s.title)).slice(0, 18)
-  const summaryLines = uniqueSections.length > 0
-    ? uniqueSections.map((s, i) => `${String(i + 1).padStart(2, '0')}. ${s}`).join('\n')
-    : '01. Conteudo do artigo'
+  const summaryLines = uniqueSections.length > 0 ?
+    uniqueSections.map((s, i) => `${String(i + 1).padStart(2, '0')}. ${s}`).join('\n') :
+    '01. Conteudo do artigo'
   summary.addText(summaryLines, {
-    x: 1.2, y: 2.0, w: 11.0, h: 4.3,
+    x: 1.2,
+    y: 2.0,
+    w: 11.0,
+    h: 4.3,
     color: PPTX_THEME.text,
     fontFace: PPTX_FONT_BODY,
     fontSize: 17,
@@ -466,7 +493,10 @@ async function generatePptx (page) {
 
     if (sec.idx > 0) {
       slide.addText(`Continua (${sec.idx + 1})`, {
-        x: 11.0, y: 0.19, w: 2.0, h: 0.28,
+        x: 11.0,
+        y: 0.19,
+        w: 2.0,
+        h: 0.28,
         color: PPTX_THEME.accentSoft,
         fontFace: PPTX_FONT_BODY,
         fontSize: 10,
@@ -474,18 +504,24 @@ async function generatePptx (page) {
       })
     }
 
-    const bulletText = sec.chunkLines.length > 0
-      ? sec.chunkLines.map(l => `• ${l}`).join('\n')
-      : '• (Sem conteudo textual nesta secao)'
+    const bulletText = sec.chunkLines.length > 0 ?
+      sec.chunkLines.map(l => `• ${l}`).join('\n') :
+      '• (Sem conteudo textual nesta secao)'
 
     slide.addShape('roundRect', {
-      x: 0.7, y: 1.2, w: 11.95, h: 5.5,
+      x: 0.7,
+      y: 1.2,
+      w: 11.95,
+      h: 5.5,
       fill: { color: 'FFFFFF' },
       line: { color: 'DCE3EE', pt: 1 },
       radius: 0.1
     })
     slide.addShape('rect', {
-      x: 0.7, y: 1.2, w: 0.13, h: 5.5,
+      x: 0.7,
+      y: 1.2,
+      w: 0.13,
+      h: 5.5,
       fill: { color: PPTX_THEME.accent },
       line: { color: PPTX_THEME.accent }
     })
@@ -502,7 +538,7 @@ async function generatePptx (page) {
     })
   })
 
-  return await pptx.write('nodebuffer')
+  return pptx.write('nodebuffer')
 }
 
 async function generate (format, page) {

@@ -1,4 +1,3 @@
-const graphHelper = require('../../helpers/graph')
 const _ = require('lodash')
 
 /* global WIKI */

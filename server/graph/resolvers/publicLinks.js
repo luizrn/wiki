@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const { nanoid } = require('nanoid')
 
 /* global WIKI */

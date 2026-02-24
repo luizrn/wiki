@@ -1,5 +1,3 @@
-const _ = require('lodash')
-
 /* global WIKI */
 
 module.exports = {

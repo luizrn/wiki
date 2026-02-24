@@ -1,5 +1,3 @@
-/* global WIKI */
-
 module.exports = {
   up: async (knex) => {
     // -> Updates (Postagens)

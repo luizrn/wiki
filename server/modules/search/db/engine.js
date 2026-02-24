@@ -131,7 +131,7 @@ module.exports = {
         .select(
           WIKI.models.knex.raw("'tbdc-' || tbdc_permissions.id as id"),
           WIKI.models.knex.raw("tbdc_permissions.ruleName || ' - ' || tbdc_companies.name || ' (' || tbdc_modules.name || ')' as title"),
-          WIKI.models.knex.raw("tbdc_permissions.description as description"),
+          WIKI.models.knex.raw('tbdc_permissions.description as description'),
           WIKI.models.knex.raw("'a/tbdc-companies/' || tbdc_companies.id as path"),
           WIKI.models.knex.raw("'pt' as locale")
         )
@@ -155,7 +155,7 @@ module.exports = {
         .join('tbdc_update_categories', 'tbdc_updates.categoryId', 'tbdc_update_categories.id')
         .select(
           WIKI.models.knex.raw("'update-' || tbdc_updates.id as id"),
-          WIKI.models.knex.raw("tbdc_updates.title as title"),
+          WIKI.models.knex.raw('tbdc_updates.title as title'),
           WIKI.models.knex.raw("tbdc_update_categories.name || ': ' || substr(tbdc_updates.content, 1, 100) as description"),
           WIKI.models.knex.raw("'novidades' as path"),
           WIKI.models.knex.raw("'pt' as locale")

@@ -1,16 +1,22 @@
 const fs = require('fs')
 
 const dbSsl = process.env.DB_SSL === 'true' ? '\n    rejectUnauthorized: false' : 'false'
+const dbType = (process.env.DB_TYPE || 'mysql').toLowerCase()
+const dbPort = process.env.DB_PORT || (
+  dbType === 'postgres' ? 5432 :
+    (dbType === 'mssql' ? 1433 : 3306)
+)
+const dbName = process.env.DB_NAME || (dbType === 'postgres' ? 'postgres' : 'wiki')
 
 const config = `port: 3000
 bindIP: 0.0.0.0
 db:
-  type: ${process.env.DB_TYPE || 'postgres'}
+  type: ${dbType}
   host: ${process.env.DB_HOST || 'db'}
-  port: ${process.env.DB_PORT || 5432}
+  port: ${dbPort}
   user: '${process.env.DB_USER}'
   pass: '${process.env.DB_PASS}'
-  db: ${process.env.DB_NAME || 'postgres'}
+  db: ${dbName}
   ssl: ${dbSsl}
 `
 

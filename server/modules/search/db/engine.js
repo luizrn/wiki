@@ -25,7 +25,26 @@ function splitTerms(query) {
   )).slice(0, MAX_SEARCH_TERMS)
 }
 
+function buildMysqlBooleanQuery(query) {
+  const terms = splitTerms(query).map(term => `${term}*`)
+  if (terms.length < 1) {
+    return null
+  }
+  return terms.join(' ')
+}
+
 function addTermMatcher(builder, likePattern, isPostgres) {
+  if (WIKI.config.db.type === 'mysql' || WIKI.config.db.type === 'mariadb') {
+    const booleanQuery = buildMysqlBooleanQuery(likePattern.replace(/%/g, ' ').trim())
+    if (booleanQuery) {
+      builder.whereRaw(`
+        MATCH (title, description, content, render, path)
+        AGAINST (? IN BOOLEAN MODE)
+      `, [booleanQuery])
+      return
+    }
+  }
+
   if (isPostgres) {
     builder.whereRaw(`${PG_SEARCH_DOC_EXPR} LIKE ?`, [likePattern])
     return
@@ -73,6 +92,7 @@ module.exports = {
     const termLikes = terms.map(term => `%${escapeLike(term)}%`)
     const maxHits = Number(WIKI.config.search.maxHits) || 50
     const isPostgres = WIKI.config.db.type === 'postgres'
+    const isMySQLFamily = WIKI.config.db.type === 'mysql' || WIKI.config.db.type === 'mariadb'
 
     const scoreExpr = []
     const scoreParams = []
@@ -122,7 +142,7 @@ module.exports = {
           builder.andWhere(builderSub => {
             addTermMatcher(builderSub, queryLike, isPostgres)
           })
-          if (termLikes.length > 1) {
+          if (!isMySQLFamily && termLikes.length > 1) {
             for (const termLike of termLikes) {
               builder.andWhere(builderSub => {
                 addTermMatcher(builderSub, termLike, isPostgres)

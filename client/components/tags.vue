@@ -149,6 +149,7 @@
     nav-footer
     notify
     search-results
+    chat-widget(v-if='$store.state.user.authenticated')
 </template>
 
 <script>

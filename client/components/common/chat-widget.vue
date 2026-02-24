@@ -129,6 +129,16 @@ const SEND_MESSAGE = gql`
   }
 `
 
+const MARK_AS_READ = gql`
+  mutation($senderId: Int!) {
+    chat {
+      markAsRead(senderId: $senderId) {
+        responseResult { succeeded }
+      }
+    }
+  }
+`
+
 const MSG_SUBSCRIPTION = gql`
   subscription {
     chatMessageReceived {
@@ -201,9 +211,15 @@ export default {
         this.fetchUsers()
       }
     },
+    search: _.debounce(function () {
+      if (this.isOpen && !this.activeUser) {
+        this.fetchUsers()
+      }
+    }, 250),
     activeUser(val) {
       if (val) {
         this.fetchMessages()
+        this.markCurrentConversationAsRead()
         this.scrollToBottom()
       }
     }
@@ -215,7 +231,10 @@ export default {
         result({ data }) {
           const msg = data.chatMessageReceived
           if (this.activeUser && (msg.senderId === this.activeUser.id || msg.receiverId === this.activeUser.id)) {
-            this.messages.push(msg)
+            this.appendMessage(msg)
+            if (msg.senderId === this.activeUser.id && msg.receiverId === this.currentUserId) {
+              this.markCurrentConversationAsRead()
+            }
             this.scrollToBottom()
           } else if (msg.senderId !== this.currentUserId) {
             this.totalUnread++
@@ -272,6 +291,25 @@ export default {
     selectUser(user) {
       this.activeUser = user
     },
+    appendMessage(msg) {
+      if (!_.some(this.messages, { id: msg.id })) {
+        this.messages.push(msg)
+      }
+    },
+    async markCurrentConversationAsRead() {
+      if (!this.activeUser) return
+      try {
+        await this.$apollo.mutate({
+          mutation: MARK_AS_READ,
+          variables: { senderId: this.activeUser.id }
+        })
+        if (this.totalUnread > 0) {
+          this.totalUnread = Math.max(this.totalUnread - 1, 0)
+        }
+      } catch (err) {
+        // ignore
+      }
+    },
     async send() {
       if (!this.newMessage.trim()) return
       const text = this.newMessage
@@ -287,7 +325,7 @@ export default {
         })
         const msg = _.get(resp, 'data.chat.sendMessage')
         if (msg) {
-          this.messages.push(msg)
+          this.appendMessage(msg)
           this.scrollToBottom()
         }
       } catch (err) {

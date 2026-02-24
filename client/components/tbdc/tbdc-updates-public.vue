@@ -57,7 +57,7 @@
               v-card.post-card(v-for='post in filteredUpdates', :key='post.id', elevation='1')
                 v-card-text
                   v-layout(align-center, class='mb-4')
-                    v-chip(label, small, :color='post.category.color', dark) {{post.category.name}}
+                    v-chip(label, small, :color='post.category ? post.category.color : "grey"', dark) {{post.category ? post.category.name : 'Sem categoria'}}
                     v-spacer
                     v-btn(icon, small, color='grey'): v-icon(small) mdi-link-variant
 
@@ -85,12 +85,14 @@
                       v-icon(size='40') mdi-emoticon-neutral-outline
                     v-btn(icon, x-large, @click='vote(post.id, 1)', :color='myVotes[post.id] === 1 ? "red" : "grey"')
                       v-icon(size='40') mdi-emoticon-sad-outline
+  chat-widget(v-if='$store.state.user.authenticated')
 
 </template>
 
 <script>
 import gql from 'graphql-tag'
 import moment from 'moment'
+import _ from 'lodash'
 
 export default {
   data() {
@@ -107,7 +109,10 @@ export default {
   computed: {
     filteredUpdates() {
       return this.updates.filter(u => {
-        const matchSearch = this.search ? (u.title.toLowerCase().includes(this.search.toLowerCase()) || u.content.toLowerCase().includes(this.search.toLowerCase())) : true
+        const search = _.toLower(_.trim(this.search || ''))
+        const title = _.toLower(u.title || '')
+        const content = _.toLower(u.content || '')
+        const matchSearch = search ? (title.includes(search) || content.includes(search)) : true
         const matchCat = this.selectedCategory ? u.categoryId === this.selectedCategory : true
         return matchSearch && matchCat
       })
@@ -135,7 +140,11 @@ export default {
         })
         this.updates = resp.data.tbdcUpdates.listUpdates.items
         this.categories = resp.data.tbdcUpdates.categories
-        this.sidebarLinks = JSON.parse(resp.data.tbdcUpdates.adminConfig.sidebarLinks || '[]')
+        try {
+          this.sidebarLinks = JSON.parse(resp.data.tbdcUpdates.adminConfig.sidebarLinks || '[]')
+        } catch (err) {
+          this.sidebarLinks = []
+        }
       } catch (err) {
         console.error(err)
       }
@@ -148,8 +157,8 @@ export default {
       return moment(date).format('DD [de] MMMM [de] YYYY')
     },
     renderMarkdown(content) {
-      // Simulação de renderização markdown
-      return content.replace(/\n/g, '<br>')
+      const safeText = _.escape(content || '')
+      return safeText.replace(/\n/g, '<br>')
     },
     async vote(updateId, rating) {
       try {

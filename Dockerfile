@@ -48,6 +48,9 @@ RUN yarn --production --frozen-lockfile --non-interactive && \
 
 COPY --from=assets /wiki/assets ./assets
 COPY server ./server
+COPY --from=assets /wiki/server/views/master.pug ./server/views/master.pug
+COPY --from=assets /wiki/server/views/setup.pug ./server/views/setup.pug
+COPY --from=assets /wiki/server/views/legacy/master.pug ./server/views/legacy/master.pug
 # We will inject the configuration dynamically using a Node script at start
 COPY generate-config.js ./
 USER node

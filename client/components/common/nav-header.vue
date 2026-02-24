@@ -341,11 +341,6 @@
     page-delete(v-model='deletePageModal', v-if='path && path.length')
     page-convert(v-model='convertPageModal', v-if='path && path.length')
 
-    .nav-header-dev(v-if='isDevMode')
-      v-icon mdi-alert
-      div
-        .overline DEVELOPMENT VERSION
-        .overline This code base is NOT for production use!
 </template>
 
 <script>
@@ -355,7 +350,7 @@ import gql from 'graphql-tag'
 
 import movePageMutation from 'gql/common/common-pages-mutation-move.gql'
 
-/* global siteConfig, siteLangs */
+/* global siteLangs */
 
 export default {
   components: {
@@ -407,7 +402,6 @@ export default {
     this.$root.$on('pageDelete', () => {
       this.pageDelete()
     })
-    this.isDevMode = siteConfig.devMode === true
   },
   data() {
     return {
@@ -419,7 +413,6 @@ export default {
       convertPageModal: false,
       deletePageModal: false,
       locales: siteLangs,
-      isDevMode: false,
       duplicateOpts: {
         locale: 'en',
         path: 'new-page',

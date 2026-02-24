@@ -18,7 +18,7 @@ COPY .eslintrc.yml ./
 COPY patches ./patches
 
 RUN yarn cache clean && \
-    yarn --frozen-lockfile --non-interactive && \
+    yarn --non-interactive && \
     yarn cache clean
 
 COPY client ./client
@@ -47,7 +47,7 @@ COPY yarn.lock ./
 COPY .npmrc ./
 
 RUN apk add --no-cache yarn && \
-    yarn --production --frozen-lockfile --non-interactive && \
+    yarn --production --non-interactive && \
     npm install -g patch-package && \
     npx patch-package && \
     yarn cache clean

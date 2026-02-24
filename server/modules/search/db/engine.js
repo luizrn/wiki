@@ -1,5 +1,7 @@
 /* global WIKI */
 
+const _ = require('lodash')
+
 const MAX_SEARCH_TERMS = 8
 
 function escapeLike(value) {
@@ -172,7 +174,8 @@ module.exports = {
     }
 
     if (results.length > 0) {
-      const pageIds = results.filter(r => !_.startsWith(r.id, 'tbdc-')).map(r => r.id)
+      const isExternalResult = (id) => _.startsWith(String(id), 'tbdc-') || _.startsWith(String(id), 'update-')
+      const pageIds = results.filter(r => !isExternalResult(r.id)).map(r => r.id)
       if (pageIds.length > 0) {
         const tagsRaw = await WIKI.models.knex('pageTags')
           .leftJoin('tags', 'tags.id', 'pageTags.tagId')
@@ -188,7 +191,7 @@ module.exports = {
         }
 
         for (const row of results) {
-          if (!_.startsWith(row.id, 'tbdc-')) {
+          if (!isExternalResult(row.id)) {
             row.tags = tagsByPageId.get(row.id) || []
           } else {
             row.tags = []

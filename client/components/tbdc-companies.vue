@@ -47,9 +47,12 @@ import NavSidebar from '../themes/default/components/nav-sidebar.vue'
 
 /* global siteLangs, siteConfig */
 
+const localeBaseMatch = window.location.pathname.match(/^\/([a-z]{2}(?:-[a-z]{2})?)\/tbdc-companies(?:\/|$)/i)
+const tbdcRouterBase = localeBaseMatch ? `/${localeBaseMatch[1]}/tbdc-companies` : '/tbdc-companies'
+
 const router = new VueRouter({
   mode: 'history',
-  base: '/tbdc-companies',
+  base: tbdcRouterBase,
   routes: [
     { path: '/', component: () => import(/* webpackChunkName: "tbdc" */ './admin/tbdc/admin-tbdc-companies.vue') },
     { path: '/new', component: () => import(/* webpackChunkName: "tbdc" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
@@ -110,7 +113,7 @@ export default {
       }
     },
     resolvedNavMode () {
-      return this.navMode || 'MIXED'
+      return 'TREE'
     }
   },
   router,

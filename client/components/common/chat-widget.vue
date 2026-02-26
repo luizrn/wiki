@@ -37,41 +37,42 @@
     .chat-content
       //- USER LIST
       template(v-if='!activeUser')
-        v-text-field.px-3.pt-2(
-          v-model='search'
-          placeholder='Buscar usuário...'
-          prepend-inner-icon='mdi-magnify'
-          dense
-          outlined
-          hide-details
-        )
-        v-list.chat-user-list(dense)
-          template(v-if='sortedRecentUsers.length > 0')
-            v-subheader.chat-group-title Conversas recentes
-            v-list-item.chat-user-item(v-for='user in sortedRecentUsers', :key='`recent-` + user.id', @click='selectUser(user)')
-              v-list-item-avatar
-                v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
-              v-list-item-content
-                v-list-item-title {{ user.name }}
-                v-list-item-subtitle
-                  span(:class='user.isOnline ? "online-text" : "offline-text"') {{ user.isOnline ? "Online" : "Offline" }}
-              v-list-item-action
-                v-badge(v-if='unreadByUser[user.id] > 0', color='red', :content='unreadByUser[user.id]')
-                  v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
-                v-icon(v-else, small, :color='user.isOnline ? "green" : "grey"') mdi-circle
-          template(v-for='(groupUsers, groupName) in groupedUsersNoHistory')
-            v-subheader.chat-group-title(:key='`group-title-` + groupName') {{ groupName }}
-            v-list-item.chat-user-item(v-for='user in groupUsers', :key='`group-user-` + user.id', @click='selectUser(user)')
-              v-list-item-avatar
-                v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
-              v-list-item-content
-                v-list-item-title {{ user.name }}
-                v-list-item-subtitle
-                  span(:class='user.isOnline ? "online-text" : "offline-text"') {{ user.isOnline ? "Online" : "Offline" }}
-              v-list-item-action
-                v-badge(v-if='unreadByUser[user.id] > 0', color='red', :content='unreadByUser[user.id]')
-                  v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
-                v-icon(v-else, small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+        .chat-user-panel
+          v-text-field.px-3.pt-2(
+            v-model='search'
+            placeholder='Buscar usuário...'
+            prepend-inner-icon='mdi-magnify'
+            dense
+            outlined
+            hide-details
+          )
+          v-list.chat-user-list(dense)
+            template(v-if='sortedRecentUsers.length > 0')
+              v-subheader.chat-group-title Conversas recentes
+              v-list-item.chat-user-item(v-for='user in sortedRecentUsers', :key='`recent-` + user.id', @click='selectUser(user)')
+                v-list-item-avatar
+                  v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
+                v-list-item-content
+                  v-list-item-title {{ user.name }}
+                  v-list-item-subtitle
+                    span(:class='user.isOnline ? "online-text" : "offline-text"') {{ user.isOnline ? "Online" : "Offline" }}
+                v-list-item-action
+                  v-badge(v-if='unreadByUser[user.id] > 0', color='red', :content='unreadByUser[user.id]')
+                    v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+                  v-icon(v-else, small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+            template(v-for='(groupUsers, groupName) in groupedUsersNoHistory')
+              v-subheader.chat-group-title(:key='`group-title-` + groupName') {{ groupName }}
+              v-list-item.chat-user-item(v-for='user in groupUsers', :key='`group-user-` + user.id', @click='selectUser(user)')
+                v-list-item-avatar
+                  v-img(:src='user.pictureUrl || "/_assets/svg/icon-user.svg"')
+                v-list-item-content
+                  v-list-item-title {{ user.name }}
+                  v-list-item-subtitle
+                    span(:class='user.isOnline ? "online-text" : "offline-text"') {{ user.isOnline ? "Online" : "Offline" }}
+                v-list-item-action
+                  v-badge(v-if='unreadByUser[user.id] > 0', color='red', :content='unreadByUser[user.id]')
+                    v-icon(small, :color='user.isOnline ? "green" : "grey"') mdi-circle
+                  v-icon(v-else, small, :color='user.isOnline ? "green" : "grey"') mdi-circle
 
       //- CHAT BOX
       template(v-else)
@@ -490,7 +491,7 @@ export default {
   z-index: 1300;
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  right: 88px;
 
   .chat-trigger {
     box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
@@ -527,7 +528,26 @@ export default {
       overflow-y: auto;
       min-height: 0;
       padding-top: 4px !important;
-      align-content: flex-start;
+      display: block !important;
+      margin-top: 0 !important;
+      align-content: initial !important;
+      justify-content: flex-start !important;
+      align-items: stretch !important;
+    }
+
+    .chat-user-list > .v-subheader,
+    .chat-user-list > .v-list-item,
+    .chat-user-list > .chat-user-item {
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+    }
+
+    .chat-user-panel {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
     }
 
     .chat-user-item {
@@ -603,6 +623,12 @@ export default {
       align-items: center;
       background-color: #f0f0f0;
     }
+  }
+}
+
+@media (max-width: 960px) {
+  .chat-widget-container {
+    right: 16px;
   }
 }
 

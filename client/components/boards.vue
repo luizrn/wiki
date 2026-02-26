@@ -24,7 +24,8 @@ v-app(:dark='$vuetify.theme.dark').boards
     v-divider
     v-toolbar(flat, dense)
       .subtitle-2 Navegação Wiki
-    nav-sidebar(:color='$vuetify.theme.dark ? `grey darken-4-d4` : `primary`', :items='sidebarItems', :nav-mode='resolvedNavMode')
+    .boards-wiki-nav
+      nav-sidebar(:color='$vuetify.theme.dark ? `grey darken-4-d4` : `primary`', :items='sidebarItems', :nav-mode='resolvedNavMode')
 
   v-content.board-content
     v-container(fluid)
@@ -285,7 +286,7 @@ export default {
       }
     },
     resolvedNavMode () {
-      return this.navMode || 'MIXED'
+      return 'TREE'
     }
   },
   methods: {
@@ -435,6 +436,16 @@ export default {
 .boards {
   .boards-sidebar {
     border-right: 1px solid rgba(24, 86, 59, 0.12);
+    .v-navigation-drawer__content {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+  }
+  .boards-wiki-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
   .board-active-item {
     background: rgba(24, 86, 59, 0.1);

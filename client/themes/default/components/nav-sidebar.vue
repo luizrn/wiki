@@ -128,6 +128,11 @@ export default {
               locale: lc
             }
           })
+          const tree = _.get(resp, 'data.pages.tree')
+          const hasAnotherLocale = locales.indexOf(lc) < (locales.length - 1)
+          if (_.isArray(tree) && tree.length < 1 && hasAnotherLocale) {
+            continue
+          }
           if (lc !== this.locale) {
             this.$store.commit('page/SET_LOCALE', lc)
           }

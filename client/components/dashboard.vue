@@ -349,7 +349,7 @@ export default {
       }
     },
     resolvedNavMode () {
-      return this.navMode || 'MIXED'
+      return 'TREE'
     },
     isAdmin () {
       return _.includes(this.permissions, 'manage:system')

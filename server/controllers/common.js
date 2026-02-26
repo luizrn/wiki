@@ -22,6 +22,7 @@ const uptimeSummaryCache = {
 
 async function getCustomPageSidebar(req) {
   const localeCandidates = _.uniq([
+    _.get(req, 'params.locale'),
     _.get(req, 'user.localeCode'),
     _.get(req, 'i18n.language'),
     _.get(WIKI, 'config.lang.code'),
@@ -61,8 +62,32 @@ async function getCustomPageSidebar(req) {
 
   return {
     sidebar,
-    navMode: _.get(WIKI, 'config.nav.mode', 'MIXED'),
+    navMode: 'TREE',
     locale: selectedLocale
+  }
+}
+
+async function renderCustomSection(req, res, next, section) {
+  if (!req.user || req.user.id < 1 || req.user.id === 2) {
+    _.set(res.locals, 'pageMeta.title', 'Unauthorized')
+    return res.status(403).render('unauthorized', { action: 'view' })
+  }
+  try {
+    const sidebarData = await getCustomPageSidebar(req)
+    const pageMetaTitle = ({
+      boards: 'Boards',
+      dashboard: 'Dashboard',
+      'tbdc-companies': 'Permissoes TBDC'
+    })[section] || 'Custom'
+    _.set(res.locals, 'pageMeta.title', pageMetaTitle)
+    const viewName = ({
+      boards: 'boards',
+      dashboard: 'dashboard',
+      'tbdc-companies': 'tbdc-companies'
+    })[section]
+    return res.render(viewName, sidebarData)
+  } catch (err) {
+    return next(err)
   }
 }
 
@@ -502,44 +527,34 @@ router.get(['/p', '/p/*'], (req, res, next) => {
  * Boards
  */
 router.get(['/boards', '/boards/*'], async (req, res, next) => {
-  if (!req.user || req.user.id < 1 || req.user.id === 2) {
-    return res.status(403).render('unauthorized', { action: 'view' })
-  }
-  try {
-    const sidebarData = await getCustomPageSidebar(req)
-    _.set(res.locals, 'pageMeta.title', 'Boards')
-    res.render('boards', sidebarData)
-  } catch (err) {
-    next(err)
-  }
+  return renderCustomSection(req, res, next, 'boards')
 })
 
 /**
  * Dashboard
  */
 router.get(['/dashboard', '/dashboard/*'], async (req, res, next) => {
-  if (!req.user || req.user.id < 1 || req.user.id === 2) {
-    return res.status(403).render('unauthorized', { action: 'view' })
-  }
-  try {
-    const sidebarData = await getCustomPageSidebar(req)
-    _.set(res.locals, 'pageMeta.title', 'Dashboard')
-    res.render('dashboard', sidebarData)
-  } catch (err) {
-    next(err)
-  }
+  return renderCustomSection(req, res, next, 'dashboard')
 })
 
 /**
- * Locale-prefixed custom pages (canonical redirect)
+ * Locale-prefixed custom pages
  */
-router.get('/:locale/:section(boards|dashboard|tbdc-companies|status)', (req, res) => {
-  res.redirect(`/${req.params.section}`)
+router.get('/:locale/:section(boards|dashboard|tbdc-companies)', async (req, res, next) => {
+  return renderCustomSection(req, res, next, req.params.section)
 })
 
-router.get('/:locale/:section(boards|dashboard|tbdc-companies|status)/*', (req, res) => {
+router.get('/:locale/:section(boards|dashboard|tbdc-companies)/*', async (req, res, next) => {
+  return renderCustomSection(req, res, next, req.params.section)
+})
+
+router.get('/:locale/status', (req, res) => {
+  return res.redirect('/status')
+})
+
+router.get('/:locale/status/*', (req, res) => {
   const suffix = _.trim(_.get(req.params, '0', ''), '/')
-  return _.isEmpty(suffix) ? res.redirect(`/${req.params.section}`) : res.redirect(`/${req.params.section}/${suffix}`)
+  return _.isEmpty(suffix) ? res.redirect('/status') : res.redirect(`/status/${suffix}`)
 })
 
 /**
@@ -623,17 +638,7 @@ router.get(['/novidades', '/novidades/*'], (req, res, next) => {
  * TBDC Companies
  */
 router.get(['/tbdc-companies', '/tbdc-companies/*'], async (req, res, next) => {
-  if (!req.user || req.user.id < 1 || req.user.id === 2) {
-    _.set(res.locals, 'pageMeta.title', 'Unauthorized')
-    return res.status(403).render('unauthorized', { action: 'view' })
-  }
-  try {
-    const sidebarData = await getCustomPageSidebar(req)
-    _.set(res.locals, 'pageMeta.title', 'Permissoes TBDC')
-    res.render('tbdc-companies', sidebarData)
-  } catch (err) {
-    next(err)
-  }
+  return renderCustomSection(req, res, next, 'tbdc-companies')
 })
 
 router.get('/tbdc-master', (req, res, next) => {

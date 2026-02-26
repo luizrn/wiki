@@ -9,10 +9,10 @@
       v-stepper(v-model='step')
         v-stepper-header.primary.darken-1(dark)
           v-stepper-step(:complete='step > 1', step='1', color='white', light)
-            span.white--text {{ $t('common:pageSelector.stepLocation') !== 'common:pageSelector.stepLocation' ? $t('common:pageSelector.stepLocation') : 'Localização' }}
+            span.white--text {{ tr('common:pageSelector.stepLocation', 'Localização') }}
           v-divider
           v-stepper-step(step='2', color='white', light)
-            span.white--text {{ $t('common:pageSelector.stepName') !== 'common:pageSelector.stepName' ? $t('common:pageSelector.stepName') : 'Nome da Página' }}
+            span.white--text {{ tr('common:pageSelector.stepName', 'Nome da Página') }}
 
         v-stepper-items
           //- STEP 1: Location & Folders
@@ -20,7 +20,7 @@
             .d-flex.flex-column
               v-toolbar(color='grey darken-3', dark, dense, flat)
                 v-icon.mr-2 mdi-folder-search-outline
-                .body-2 {{ $t('common:pageSelector.virtualFolders') }}
+                .body-2 {{ tr('common:pageSelector.virtualFolders', 'Pastas Virtuais') }}
                 v-spacer
                 v-btn(icon, small, @click='showNewFolderDialog = true', color='success')
                   v-icon mdi-folder-plus
@@ -47,14 +47,68 @@
                       v-icon(color='orange darken-2') mdi-{{ open ? 'folder-open' : 'folder' }}
 
               v-divider
+              v-container.py-3.px-4(fluid, v-if='isCreateMode')
+                v-row
+                  v-col(cols='12', md='8')
+                    v-text-field(
+                      ref='quickPathIpt'
+                      outlined
+                      dense
+                      hide-details='auto'
+                      :label='tr("common:pageSelector.pageName", "Nome da Página")'
+                      v-model='currentPathName'
+                      placeholder='meu-novo-artigo'
+                      prepend-inner-icon='mdi-file-document-edit-outline'
+                      @keyup.enter='open'
+                    )
+                  v-col(cols='12', md='4', v-if='namespaces.length > 1')
+                    v-select(
+                      outlined
+                      dense
+                      hide-details='auto'
+                      :label='tr("common:pageSelector.language", "Idioma")'
+                      :items='namespaces'
+                      v-model='currentLocale'
+                      prepend-inner-icon='mdi-translate'
+                    )
+                v-row.mt-1
+                  v-col(cols='12')
+                    v-switch.mt-0(
+                      v-model='advancedPathMode'
+                      inset
+                      dense
+                      hide-details
+                      :label='tr("common:pageSelector.advancedDirectory", "Modo avançado: definir diretório manualmente")'
+                    )
+                    v-text-field.mt-2(
+                      v-if='advancedPathMode'
+                      outlined
+                      dense
+                      hide-details='auto'
+                      :label='tr("common:pageSelector.targetDirectory", "Diretório de destino")'
+                      v-model='advancedFolderPath'
+                      prepend-inner-icon='mdi-folder-cog-outline'
+                      placeholder='clientes-processos/financeiro'
+                    )
+                    .mt-3.pa-3.rounded.grey(:class='$vuetify.theme.dark ? `darken-4` : `lighten-4`')
+                      .caption.grey--text {{ tr('common:pageSelector.finalPathPreview', 'Prévia do Caminho Final') }}
+                      .subtitle-1.primary--text
+                        strong /{{ effectiveFolderPath }}{{ effectiveFolderPath ? '/' : '' }}{{ currentPathName || 'nova-pagina' }}
+
+              v-divider
               v-card-actions.grey.pa-3(:class='$vuetify.theme.dark ? `darken-4` : `lighten-3`')
-                .caption.grey--text {{ $t('common:pageSelector.selectedPath') }}:
+                .caption.grey--text {{ tr('common:pageSelector.selectedPath', 'Caminho selecionado') }}:
                 code.ml-2 /{{ currentFolderPath || '(root)' }}
                 v-spacer
-                v-btn(text, @click='close') {{ $t('common:actions.cancel') }}
-                v-btn(color='primary', @click='step = 2', :disabled='!isFolderSelected')
-                  span {{ $t('common:actions.next') }}
+                v-btn(text, @click='close') {{ tr('common:actions.cancel', 'Cancelar') }}
+                v-btn(v-if='!isCreateMode', color='primary', @click='step = 2', :disabled='!isFolderSelected')
+                  span {{ tr('common:actions.next', 'Próximo') }}
                   v-icon(right) mdi-chevron-right
+                v-btn(v-if='isCreateMode', color='secondary', outlined, @click='step = 2')
+                  span {{ tr('common:actions.advanced', 'Opções avançadas') }}
+                v-btn(v-if='isCreateMode', color='primary', @click='open', :disabled='!isValidPath')
+                  v-icon(left) mdi-check
+                  span {{ tr('common:actions.createPage', 'Criar Página') }}
 
           //- STEP 2: Page Name
           v-stepper-content.pa-0(step='2')
@@ -65,7 +119,7 @@
                   v-select(
                     solo
                     flat
-                    :label='$t("common:pageSelector.language") !== "common:pageSelector.language" ? $t("common:pageSelector.language") : "Idioma"'
+                    :label='tr("common:pageSelector.language", "Idioma")'
                     :items='namespaces'
                     v-model='currentLocale'
                     prepend-inner-icon='mdi-translate'
@@ -77,7 +131,7 @@
                     ref='pathIpt'
                     solo
                     flat
-                    :label='$t("common:pageSelector.pageName") !== "common:pageSelector.pageName" ? $t("common:pageSelector.pageName") : "Nome da Página"'
+                    :label='tr("common:pageSelector.pageName", "Nome da Página")'
                     prefix='/'
                     v-model='currentPathName'
                     background-color='grey lighten-4'
@@ -87,36 +141,36 @@
                     autofocus
                   )
                   .mt-4.pa-4.rounded.grey(:class='$vuetify.theme.dark ? `darken-4` : `lighten-4`')
-                    .caption.grey--text {{ $t('common:pageSelector.finalPathPreview') !== 'common:pageSelector.finalPathPreview' ? $t('common:pageSelector.finalPathPreview') : 'Prévia do Caminho Final' }}
+                    .caption.grey--text {{ tr('common:pageSelector.finalPathPreview', 'Prévia do Caminho Final') }}
                     .subtitle-1.primary--text
-                      strong /{{ currentFolderPath }}{{ currentFolderPath ? '/' : '' }}{{ currentPathName }}
+                      strong /{{ effectiveFolderPath }}{{ effectiveFolderPath ? '/' : '' }}{{ currentPathName }}
 
               v-row.mt-5
                 v-col(cols='12', class='d-flex align-center')
                   v-btn(text, @click='step = 1')
                     v-icon(left) mdi-chevron-left
-                    span {{ $t('common:actions.back') }}
+                    span {{ tr('common:actions.back', 'Voltar') }}
                   v-spacer
                   v-btn.px-6(color='primary', x-large, @click='open', :disabled='!isValidPath')
                     v-icon(left) mdi-check
-                    span {{ $t('common:actions.createPage') !== 'common:actions.createPage' ? $t('common:actions.createPage') : 'Criar Página' }}
+                    span {{ tr('common:actions.createPage', 'Criar Página') }}
 
     //- New Folder Dialog
     v-dialog(v-model='showNewFolderDialog', max-width='400')
       v-card
-        v-card-title {{ $t('common:pageSelector.createNewFolder') !== 'common:pageSelector.createNewFolder' ? $t('common:pageSelector.createNewFolder') : 'Criar Nova Pasta' }}
+        v-card-title {{ tr('common:pageSelector.createNewFolder', 'Criar Nova Pasta') }}
         v-card-text
           v-text-field(
             v-model='newFolderName'
-            :label='$t("common:pageSelector.folderName") !== "common:pageSelector.folderName" ? $t("common:pageSelector.folderName") : "Nome da Pasta"'
+            :label='tr("common:pageSelector.folderName", "Nome da Pasta")'
             placeholder='folder-name'
             @keyup.enter='createNewFolder'
             autofocus
           )
         v-card-actions
           v-spacer
-          v-btn(text, @click='showNewFolderDialog = false') {{ $t('common:actions.cancel') }}
-          v-btn(color='primary', @click='createNewFolder', :disabled='!newFolderName') {{ $t('common:actions.create') }}
+          v-btn(text, @click='showNewFolderDialog = false') {{ tr('common:actions.cancel', 'Cancelar') }}
+          v-btn(color='primary', @click='createNewFolder', :disabled='!newFolderName') {{ tr('common:actions.create', 'Criar') }}
 </template>
 
 <script>
@@ -163,6 +217,8 @@ export default {
       searchLoading: false,
       currentLocale: siteConfig.lang,
       currentFolderPath: '',
+      advancedPathMode: false,
+      advancedFolderPath: '',
       currentPathName: 'new-page',
       currentPage: null,
       currentNode: [],
@@ -213,6 +269,12 @@ export default {
     currentPages () {
       return _.sortBy(_.filter(this.pages, ['parent', _.head(this.currentNode) || 0]), ['title', 'path'])
     },
+    isCreateMode () {
+      return this.mode === 'create'
+    },
+    effectiveFolderPath () {
+      return this.advancedPathMode ? _.trim(_.trim(this.advancedFolderPath || ''), '/') : this.currentFolderPath
+    },
     isFolderSelected () {
       return this.currentNode.length > 0 || this.currentNode[0] === 0
     },
@@ -223,7 +285,7 @@ export default {
       if (this.mustExist && !this.currentPage) {
         return false
       }
-      const fullPath = _.compact([this.currentFolderPath, this.currentPathName]).join('/')
+      const fullPath = _.compact([this.effectiveFolderPath, this.currentPathName]).join('/')
       const firstSection = _.head(fullPath.split('/'))
       if (firstSection.length <= 1) {
         return false
@@ -245,6 +307,8 @@ export default {
         this.step = 1
         this.currentPathName = _.last(this.path.split('/'))
         this.currentFolderPath = _.initial(this.path.split('/')).join('/')
+        this.advancedFolderPath = this.currentFolderPath
+        this.advancedPathMode = false
         this.currentLocale = this.locale
         this.currentNode = []
       }
@@ -254,12 +318,18 @@ export default {
         const current = _.find(this.all, ['path', newValue[0]])
         if (current) {
           this.currentFolderPath = current.path
+          if (!this.advancedPathMode) {
+            this.advancedFolderPath = current.path
+          }
           if (this.openNodes.indexOf(current.id) < 0) {
             this.openNodes.push(current.id)
           }
         }
       } else {
         this.currentFolderPath = ''
+        if (!this.advancedPathMode) {
+          this.advancedFolderPath = ''
+        }
       }
     },
     currentPage (newValue, oldValue) {
@@ -285,11 +355,15 @@ export default {
     }
   },
   methods: {
+    tr(key, fallback) {
+      const txt = this.$t(key)
+      return txt !== key ? txt : fallback
+    },
     close() {
       this.isShown = false
     },
     open() {
-      const fullPath = _.compact([this.currentFolderPath, this.currentPathName]).join('/')
+      const fullPath = _.compact([this.effectiveFolderPath, this.currentPathName]).join('/')
       const exit = this.openHandler({
         locale: this.currentLocale,
         path: fullPath,

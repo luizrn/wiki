@@ -3,6 +3,40 @@ const _ = require('lodash')
 
 /* global WIKI */
 
+const DEFAULT_PUBLIC_HEADER = {
+  title: 'Novidades TBDC',
+  subtitle: 'Central pública de comunicados e atualizações',
+  logoUrl: '/_assets/img/tbdc-agro-logo.png'
+}
+
+const DEFAULT_PUBLIC_FOOTER = {
+  instagramText: 'Siga-nos no Instagram',
+  instagramHandle: '@tbdcagro',
+  instagramUrl: 'https://www.instagram.com/tbdcagro/',
+  commercialPhone: '65 99623-2985',
+  supportPhone: '65 99990-0123',
+  addressLine1: 'Av. das Arapongas, 1104 N, Jardim das Orquídeas,',
+  addressLine2: 'Nova Mutum - MT, 78452-006',
+  mapUrl: 'https://maps.google.com/?q=Av.+das+Arapongas,+1104+Nova+Mutum+MT',
+  privacyUrl: 'https://www.tbdc.com.br/',
+  cookiesUrl: 'https://www.tbdc.com.br/',
+  termsUrl: 'https://www.tbdc.com.br/',
+  companyId: '© TBDC - 28.845.223/0001-79',
+  socialInstagram: 'https://www.instagram.com/tbdcagro/',
+  socialFacebook: 'https://www.facebook.com/',
+  socialLinkedin: 'https://www.linkedin.com/',
+  socialYoutube: 'https://www.youtube.com/'
+}
+
+async function upsertUpdateConfig (key, value) {
+  const exists = await WIKI.models.knex('tbdc_update_config').where({ key }).first('key')
+  if (exists) {
+    await WIKI.models.knex('tbdc_update_config').where({ key }).update({ value: _.toString(value) })
+  } else {
+    await WIKI.models.knex('tbdc_update_config').insert({ key, value: _.toString(value) })
+  }
+}
+
 module.exports = {
   Query: {
     async tbdcUpdates() { return {} }
@@ -49,9 +83,29 @@ module.exports = {
     async adminConfig() {
       const config = await WIKI.models.knex('tbdc_update_config').select()
       const responsibleUserId = _.toSafeInteger(_.get(_.find(config, { key: 'responsibleUserId' }), 'value', 1))
+      const conf = (key, fallback) => _.get(_.find(config, { key }), 'value', fallback)
       return {
         responsibleUserId: responsibleUserId > 0 ? responsibleUserId : 1,
-        sidebarLinks: _.get(_.find(config, { key: 'sidebarLinks' }), 'value', '[]')
+        sidebarLinks: conf('sidebarLinks', '[]'),
+        publicHeaderTitle: conf('publicHeaderTitle', DEFAULT_PUBLIC_HEADER.title),
+        publicHeaderSubtitle: conf('publicHeaderSubtitle', DEFAULT_PUBLIC_HEADER.subtitle),
+        publicHeaderLogoUrl: conf('publicHeaderLogoUrl', DEFAULT_PUBLIC_HEADER.logoUrl),
+        publicFooterInstagramText: conf('publicFooterInstagramText', DEFAULT_PUBLIC_FOOTER.instagramText),
+        publicFooterInstagramHandle: conf('publicFooterInstagramHandle', DEFAULT_PUBLIC_FOOTER.instagramHandle),
+        publicFooterInstagramUrl: conf('publicFooterInstagramUrl', DEFAULT_PUBLIC_FOOTER.instagramUrl),
+        publicFooterCommercialPhone: conf('publicFooterCommercialPhone', DEFAULT_PUBLIC_FOOTER.commercialPhone),
+        publicFooterSupportPhone: conf('publicFooterSupportPhone', DEFAULT_PUBLIC_FOOTER.supportPhone),
+        publicFooterAddressLine1: conf('publicFooterAddressLine1', DEFAULT_PUBLIC_FOOTER.addressLine1),
+        publicFooterAddressLine2: conf('publicFooterAddressLine2', DEFAULT_PUBLIC_FOOTER.addressLine2),
+        publicFooterMapUrl: conf('publicFooterMapUrl', DEFAULT_PUBLIC_FOOTER.mapUrl),
+        publicFooterPrivacyUrl: conf('publicFooterPrivacyUrl', DEFAULT_PUBLIC_FOOTER.privacyUrl),
+        publicFooterCookiesUrl: conf('publicFooterCookiesUrl', DEFAULT_PUBLIC_FOOTER.cookiesUrl),
+        publicFooterTermsUrl: conf('publicFooterTermsUrl', DEFAULT_PUBLIC_FOOTER.termsUrl),
+        publicFooterCompanyId: conf('publicFooterCompanyId', DEFAULT_PUBLIC_FOOTER.companyId),
+        publicFooterSocialInstagram: conf('publicFooterSocialInstagram', DEFAULT_PUBLIC_FOOTER.socialInstagram),
+        publicFooterSocialFacebook: conf('publicFooterSocialFacebook', DEFAULT_PUBLIC_FOOTER.socialFacebook),
+        publicFooterSocialLinkedin: conf('publicFooterSocialLinkedin', DEFAULT_PUBLIC_FOOTER.socialLinkedin),
+        publicFooterSocialYoutube: conf('publicFooterSocialYoutube', DEFAULT_PUBLIC_FOOTER.socialYoutube)
       }
     },
     async categories() {
@@ -101,10 +155,67 @@ module.exports = {
     async saveConfig(obj, args) {
       try {
         if (!_.isNil(args.responsibleUserId)) {
-          await WIKI.models.knex('tbdc_update_config').where('key', 'responsibleUserId').update({ value: args.responsibleUserId.toString() })
+          await upsertUpdateConfig('responsibleUserId', args.responsibleUserId.toString())
         }
         if (!_.isNil(args.sidebarLinks)) {
-          await WIKI.models.knex('tbdc_update_config').where('key', 'sidebarLinks').update({ value: args.sidebarLinks })
+          await upsertUpdateConfig('sidebarLinks', args.sidebarLinks)
+        }
+        if (!_.isNil(args.publicHeaderTitle)) {
+          await upsertUpdateConfig('publicHeaderTitle', _.trim(args.publicHeaderTitle || DEFAULT_PUBLIC_HEADER.title))
+        }
+        if (!_.isNil(args.publicHeaderSubtitle)) {
+          await upsertUpdateConfig('publicHeaderSubtitle', _.trim(args.publicHeaderSubtitle || DEFAULT_PUBLIC_HEADER.subtitle))
+        }
+        if (!_.isNil(args.publicHeaderLogoUrl)) {
+          await upsertUpdateConfig('publicHeaderLogoUrl', _.trim(args.publicHeaderLogoUrl || DEFAULT_PUBLIC_HEADER.logoUrl))
+        }
+        if (!_.isNil(args.publicFooterInstagramText)) {
+          await upsertUpdateConfig('publicFooterInstagramText', _.trim(args.publicFooterInstagramText || DEFAULT_PUBLIC_FOOTER.instagramText))
+        }
+        if (!_.isNil(args.publicFooterInstagramHandle)) {
+          await upsertUpdateConfig('publicFooterInstagramHandle', _.trim(args.publicFooterInstagramHandle || DEFAULT_PUBLIC_FOOTER.instagramHandle))
+        }
+        if (!_.isNil(args.publicFooterInstagramUrl)) {
+          await upsertUpdateConfig('publicFooterInstagramUrl', _.trim(args.publicFooterInstagramUrl || DEFAULT_PUBLIC_FOOTER.instagramUrl))
+        }
+        if (!_.isNil(args.publicFooterCommercialPhone)) {
+          await upsertUpdateConfig('publicFooterCommercialPhone', _.trim(args.publicFooterCommercialPhone || DEFAULT_PUBLIC_FOOTER.commercialPhone))
+        }
+        if (!_.isNil(args.publicFooterSupportPhone)) {
+          await upsertUpdateConfig('publicFooterSupportPhone', _.trim(args.publicFooterSupportPhone || DEFAULT_PUBLIC_FOOTER.supportPhone))
+        }
+        if (!_.isNil(args.publicFooterAddressLine1)) {
+          await upsertUpdateConfig('publicFooterAddressLine1', _.trim(args.publicFooterAddressLine1 || DEFAULT_PUBLIC_FOOTER.addressLine1))
+        }
+        if (!_.isNil(args.publicFooterAddressLine2)) {
+          await upsertUpdateConfig('publicFooterAddressLine2', _.trim(args.publicFooterAddressLine2 || DEFAULT_PUBLIC_FOOTER.addressLine2))
+        }
+        if (!_.isNil(args.publicFooterMapUrl)) {
+          await upsertUpdateConfig('publicFooterMapUrl', _.trim(args.publicFooterMapUrl || DEFAULT_PUBLIC_FOOTER.mapUrl))
+        }
+        if (!_.isNil(args.publicFooterPrivacyUrl)) {
+          await upsertUpdateConfig('publicFooterPrivacyUrl', _.trim(args.publicFooterPrivacyUrl || DEFAULT_PUBLIC_FOOTER.privacyUrl))
+        }
+        if (!_.isNil(args.publicFooterCookiesUrl)) {
+          await upsertUpdateConfig('publicFooterCookiesUrl', _.trim(args.publicFooterCookiesUrl || DEFAULT_PUBLIC_FOOTER.cookiesUrl))
+        }
+        if (!_.isNil(args.publicFooterTermsUrl)) {
+          await upsertUpdateConfig('publicFooterTermsUrl', _.trim(args.publicFooterTermsUrl || DEFAULT_PUBLIC_FOOTER.termsUrl))
+        }
+        if (!_.isNil(args.publicFooterCompanyId)) {
+          await upsertUpdateConfig('publicFooterCompanyId', _.trim(args.publicFooterCompanyId || DEFAULT_PUBLIC_FOOTER.companyId))
+        }
+        if (!_.isNil(args.publicFooterSocialInstagram)) {
+          await upsertUpdateConfig('publicFooterSocialInstagram', _.trim(args.publicFooterSocialInstagram || DEFAULT_PUBLIC_FOOTER.socialInstagram))
+        }
+        if (!_.isNil(args.publicFooterSocialFacebook)) {
+          await upsertUpdateConfig('publicFooterSocialFacebook', _.trim(args.publicFooterSocialFacebook || DEFAULT_PUBLIC_FOOTER.socialFacebook))
+        }
+        if (!_.isNil(args.publicFooterSocialLinkedin)) {
+          await upsertUpdateConfig('publicFooterSocialLinkedin', _.trim(args.publicFooterSocialLinkedin || DEFAULT_PUBLIC_FOOTER.socialLinkedin))
+        }
+        if (!_.isNil(args.publicFooterSocialYoutube)) {
+          await upsertUpdateConfig('publicFooterSocialYoutube', _.trim(args.publicFooterSocialYoutube || DEFAULT_PUBLIC_FOOTER.socialYoutube))
         }
         return graphHelper.generateSuccess('Configuration saved successfully.')
       } catch (err) {

@@ -1,5 +1,5 @@
 <template lang="pug">
-  div
+  .nav-sidebar-root
     .pa-3.d-flex(v-if='navMode === `MIXED`', :class='$vuetify.theme.dark ? `grey darken-5` : `primary darken-2`')
       v-btn(
         depressed
@@ -285,3 +285,17 @@ export default {
   }
 }
 </script>
+
+<style lang="scss">
+.nav-sidebar-root {
+  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .v-list {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+</style>

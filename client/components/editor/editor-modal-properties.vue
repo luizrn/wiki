@@ -229,12 +229,18 @@
                     | Aguardando aprovação administrativa...
                   v-list-item-subtitle(v-else-if='publicLink.status === "REJECTED"')
                     | Esta solicitação foi rejeitada por um administrador.
-                  v-list-item-subtitle(v-else-if='publicLink.status === "REVOKED"')
+                  v-list-item-subtitle(v-else-if='publicLink.status === "REVOKED" || publicLink.status === "EXPIRED"')
                     | Este link foi revogado.
+                  v-list-item-subtitle(v-else)
+                    | Este link não está ativo.
                 v-list-item-action(v-if='publicLink.status === "APPROVED" || publicLink.status === "PENDING"')
                   v-btn(color='error', outlined, small, @click='revokePublicLink')
                     v-icon(left) mdi-link-variant-off
                     span Revogar
+                v-list-item-action(v-else)
+                  v-btn(color='primary', small, @click='requestPublicLink', :loading='requestingLink')
+                    v-icon(left) mdi-link-plus
+                    span Solicitar Novo Link
 
               v-divider(v-if='publicLink.status === "APPROVED"')
               v-card-text(v-if='publicLink.status === "APPROVED"')
@@ -435,7 +441,8 @@ export default {
           variables: { pageId: this.pageId },
           fetchPolicy: 'network-only'
         })
-        this.publicLink = _.first(_.get(data, 'publicLinks.byPage', [])) || null
+        const links = _.orderBy(_.get(data, 'publicLinks.byPage', []), ['createdAt', 'id'], ['desc', 'desc'])
+        this.publicLink = _.first(links) || null
       } catch (err) {
         this.$store.commit('pushGraphError', err)
       }
@@ -474,16 +481,26 @@ export default {
     async revokePublicLink () {
       if (!this.publicLink) return
       try {
-        await this.$apollo.mutate({
+        const { data } = await this.$apollo.mutate({
           mutation: gql`
             mutation ($id: Int!) {
               publicLinks {
-                revoke(id: $id) { succeeded message }
+                revoke(id: $id) {
+                  responseResult {
+                    succeeded
+                    message
+                  }
+                }
               }
             }
           `,
           variables: { id: this.publicLink.id }
         })
+        const resp = _.get(data, 'publicLinks.revoke.responseResult')
+        if (!_.get(resp, 'succeeded', false)) {
+          throw new Error(_.get(resp, 'message', 'Falha ao revogar link público.'))
+        }
+        this.$store.commit('showNotification', { message: _.get(resp, 'message', 'Link público revogado.'), style: 'success' })
         this.fetchPublicLink()
       } catch (err) {
         this.$store.commit('pushGraphError', err)

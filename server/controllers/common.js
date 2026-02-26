@@ -6,6 +6,7 @@ const CleanCSS = require('clean-css')
 const moment = require('moment')
 const qs = require('querystring')
 const articleExport = require('../helpers/article-export')
+const tbdcCompanyExport = require('../helpers/tbdc-company-export')
 const request = require('request-promise')
 
 /* global WIKI */
@@ -608,6 +609,27 @@ router.get('/novidades/data', async (req, res) => {
 
     const configRows = await WIKI.models.knex('tbdc_update_config').select('key', 'value')
     const sidebarLinksRaw = _.get(_.find(configRows, { key: 'sidebarLinks' }), 'value', '[]')
+    const publicHeaderTitle = _.get(_.find(configRows, { key: 'publicHeaderTitle' }), 'value', 'Novidades TBDC')
+    const publicHeaderSubtitle = _.get(_.find(configRows, { key: 'publicHeaderSubtitle' }), 'value', 'Central pública de comunicados e atualizações')
+    const publicHeaderLogoUrl = _.get(_.find(configRows, { key: 'publicHeaderLogoUrl' }), 'value', '/_assets/img/tbdc-agro-logo.png')
+    const publicFooter = {
+      instagramText: _.get(_.find(configRows, { key: 'publicFooterInstagramText' }), 'value', 'Siga-nos no Instagram'),
+      instagramHandle: _.get(_.find(configRows, { key: 'publicFooterInstagramHandle' }), 'value', '@tbdcagro'),
+      instagramUrl: _.get(_.find(configRows, { key: 'publicFooterInstagramUrl' }), 'value', 'https://www.instagram.com/tbdcagro/'),
+      commercialPhone: _.get(_.find(configRows, { key: 'publicFooterCommercialPhone' }), 'value', '65 99623-2985'),
+      supportPhone: _.get(_.find(configRows, { key: 'publicFooterSupportPhone' }), 'value', '65 99990-0123'),
+      addressLine1: _.get(_.find(configRows, { key: 'publicFooterAddressLine1' }), 'value', 'Av. das Arapongas, 1104 N, Jardim das Orquídeas,'),
+      addressLine2: _.get(_.find(configRows, { key: 'publicFooterAddressLine2' }), 'value', 'Nova Mutum - MT, 78452-006'),
+      mapUrl: _.get(_.find(configRows, { key: 'publicFooterMapUrl' }), 'value', 'https://maps.google.com/?q=Av.+das+Arapongas,+1104+Nova+Mutum+MT'),
+      privacyUrl: _.get(_.find(configRows, { key: 'publicFooterPrivacyUrl' }), 'value', 'https://www.tbdc.com.br/'),
+      cookiesUrl: _.get(_.find(configRows, { key: 'publicFooterCookiesUrl' }), 'value', 'https://www.tbdc.com.br/'),
+      termsUrl: _.get(_.find(configRows, { key: 'publicFooterTermsUrl' }), 'value', 'https://www.tbdc.com.br/'),
+      companyId: _.get(_.find(configRows, { key: 'publicFooterCompanyId' }), 'value', '© TBDC - 28.845.223/0001-79'),
+      socialInstagram: _.get(_.find(configRows, { key: 'publicFooterSocialInstagram' }), 'value', 'https://www.instagram.com/tbdcagro/'),
+      socialFacebook: _.get(_.find(configRows, { key: 'publicFooterSocialFacebook' }), 'value', 'https://www.facebook.com/'),
+      socialLinkedin: _.get(_.find(configRows, { key: 'publicFooterSocialLinkedin' }), 'value', 'https://www.linkedin.com/'),
+      socialYoutube: _.get(_.find(configRows, { key: 'publicFooterSocialYoutube' }), 'value', 'https://www.youtube.com/')
+    }
     let sidebarLinks = []
     try {
       sidebarLinks = JSON.parse(sidebarLinksRaw || '[]')
@@ -619,7 +641,13 @@ router.get('/novidades/data', async (req, res) => {
       ok: true,
       updates,
       categories,
-      sidebarLinks
+      sidebarLinks,
+      publicHeader: {
+        title: publicHeaderTitle || 'Novidades TBDC',
+        subtitle: publicHeaderSubtitle || 'Central pública de comunicados e atualizações',
+        logoUrl: publicHeaderLogoUrl || '/_assets/img/tbdc-agro-logo.png'
+      },
+      publicFooter
     })
   } catch (err) {
     res.status(500).json({
@@ -785,6 +813,73 @@ router.get('/x/:format/:locale/*', async (req, res, next) => {
     }
 
     const file = await articleExport.generate(format, page)
+    res.setHeader('Content-Type', file.mime)
+    res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`)
+    res.setHeader('Cache-Control', 'no-store')
+    res.send(file.buffer)
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * Export TBDC company permissions on demand (no file storage)
+ */
+router.get('/x-company/:format/:id', async (req, res, next) => {
+  try {
+    if (!req.user || req.user.id < 1 || req.user.id === 2) {
+      _.set(res.locals, 'pageMeta.title', 'Unauthorized')
+      return res.status(403).render('unauthorized', { action: 'view' })
+    }
+
+    const format = _.toLower(req.params.format || '')
+    const companyId = _.toSafeInteger(req.params.id)
+    if (!format || companyId < 1) {
+      return res.status(400).json({ ok: false, message: 'Invalid export path.' })
+    }
+
+    const company = await WIKI.models.tbdc.company.query().findById(companyId)
+    if (!company) {
+      _.set(res.locals, 'pageMeta.title', 'Page Not Found')
+      return res.status(404).render('notfound', { action: 'view' })
+    }
+
+    let levelRows = []
+    try {
+      levelRows = await WIKI.models.tbdc.permission_level.query().where('isActive', true).orderBy('order', 'asc')
+    } catch (e) {
+      levelRows = []
+    }
+
+    const [cs, implantador, permissionsRaw] = await Promise.all([
+      company.csId ? WIKI.models.tbdc.staff.query().findById(company.csId) : null,
+      company.implantadorId ? WIKI.models.tbdc.staff.query().findById(company.implantadorId) : null,
+      WIKI.models.tbdc.permission.query().where('companyId', company.id).orderBy('moduleId', 'asc').orderBy('ruleName', 'asc')
+    ])
+
+    const modules = await WIKI.models.tbdc.module.query()
+    const products = await WIKI.models.tbdc.product.query()
+    const moduleMap = _.keyBy(modules, 'id')
+    const productMap = _.keyBy(products, 'id')
+    const levelMap = _.keyBy(levelRows, 'code')
+
+    const permissions = (permissionsRaw || []).map(p => {
+      const mod = moduleMap[p.moduleId]
+      const prod = mod ? productMap[mod.productId] : null
+      return {
+        ...p,
+        moduleName: _.get(mod, 'name', ''),
+        productName: _.get(prod, 'name', ''),
+        levelLabel: _.get(levelMap, [p.level, 'label'], p.level)
+      }
+    })
+
+    const file = await tbdcCompanyExport.generate(format, {
+      ...company,
+      cs,
+      implantador
+    }, permissions)
+
     res.setHeader('Content-Type', file.mime)
     res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`)
     res.setHeader('Cache-Control', 'no-store')

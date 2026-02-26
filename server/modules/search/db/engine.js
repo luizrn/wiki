@@ -155,8 +155,12 @@ module.exports = {
         .limit(maxHits)
     }
 
-    // -> Search TBDC Permissions
-    if (opts.filterPermissions !== false) {
+    // -> Search TBDC Company Permissions
+    const shouldSearchCompanyPermissions = (
+      opts.filterCompanyPermissions === true ||
+      (typeof opts.filterCompanyPermissions === 'undefined' && opts.filterPermissions !== false)
+    )
+    if (shouldSearchCompanyPermissions) {
       const tbdcResults = await WIKI.models.knex('tbdc_permissions')
         .join('tbdc_companies', 'tbdc_permissions.companyId', 'tbdc_companies.id')
         .join('tbdc_modules', 'tbdc_permissions.moduleId', 'tbdc_modules.id')
@@ -179,13 +183,25 @@ module.exports = {
         })
         .limit(maxHits)
 
-      results = _.concat(results, tbdcResults.map(r => ({
-        id: `tbdc-${r.permissionId}`,
-        title: `${r.ruleName} - ${r.companyName} (${r.moduleName})`,
-        description: r.ruleDescription || '',
-        path: `a/tbdc-companies/${r.companyId}`,
-        locale: 'pt'
-      })))
+      const companyGroups = _.groupBy(tbdcResults, 'companyId')
+      const companyItems = _.map(companyGroups, (rows, companyId) => {
+        const first = rows[0] || {}
+        const modules = _.uniq(rows.map(r => r.moduleName).filter(Boolean))
+        const rules = _.uniq(rows.map(r => r.ruleName).filter(Boolean))
+        const snippets = _.uniq(rows.map(r => r.ruleDescription).filter(Boolean))
+        return {
+          id: `tbdc-company-${companyId}`,
+          title: first.companyName || 'Permissões de Empresa',
+          description: _.truncate(
+            `Módulos: ${modules.join(', ')} | Regras: ${rules.join(', ')}${snippets.length > 0 ? ` | ${snippets[0]}` : ''}`,
+            { length: 180, omission: '...' }
+          ),
+          path: `tbdc-companies/${companyId}/details`,
+          locale: 'pt-br'
+        }
+      })
+
+      results = _.concat(results, companyItems)
     }
 
     // -> Search TBDC Updates

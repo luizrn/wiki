@@ -57,6 +57,7 @@ const router = new VueRouter({
     { path: '/', component: () => import(/* webpackChunkName: "tbdc" */ './admin/tbdc/admin-tbdc-companies.vue') },
     { path: '/new', component: () => import(/* webpackChunkName: "tbdc" */ './admin/tbdc/admin-tbdc-companies-edit.vue') },
     { path: '/master', beforeEnter: () => { window.location.assign('/a/tbdc-master') } },
+    { path: '/:id(\\d+)/details', component: () => import(/* webpackChunkName: "tbdc" */ './admin/tbdc/admin-tbdc-companies-view.vue') },
     { path: '/:id(\\d+)', component: () => import(/* webpackChunkName: "tbdc" */ './admin/tbdc/admin-tbdc-companies-edit.vue') }
   ]
 })

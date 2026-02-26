@@ -1,15 +1,15 @@
 query (
   $query: String!
-  $filterPermissions: Boolean
   $filterPages: Boolean
   $filterUpdates: Boolean
+  $filterPermissions: Boolean
 ) {
   pages {
     search(
       query: $query
-      filterPermissions: $filterPermissions
       filterPages: $filterPages
       filterUpdates: $filterUpdates
+      filterPermissions: $filterPermissions
     ) {
       results {
         id

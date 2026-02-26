@@ -53,6 +53,25 @@ type TBDCUpdateMutation {
   saveConfig(
     responsibleUserId: Int
     sidebarLinks: String
+    publicHeaderTitle: String
+    publicHeaderSubtitle: String
+    publicHeaderLogoUrl: String
+    publicFooterInstagramText: String
+    publicFooterInstagramHandle: String
+    publicFooterInstagramUrl: String
+    publicFooterCommercialPhone: String
+    publicFooterSupportPhone: String
+    publicFooterAddressLine1: String
+    publicFooterAddressLine2: String
+    publicFooterMapUrl: String
+    publicFooterPrivacyUrl: String
+    publicFooterCookiesUrl: String
+    publicFooterTermsUrl: String
+    publicFooterCompanyId: String
+    publicFooterSocialInstagram: String
+    publicFooterSocialFacebook: String
+    publicFooterSocialLinkedin: String
+    publicFooterSocialYoutube: String
   ): DefaultResponse @auth(requires: ["manage:system"])
 
   upsertCategory(
@@ -133,6 +152,25 @@ type TBDCUpdateRatings {
 type TBDCUpdateAdminConfig {
   responsibleUserId: Int
   sidebarLinks: String
+  publicHeaderTitle: String
+  publicHeaderSubtitle: String
+  publicHeaderLogoUrl: String
+  publicFooterInstagramText: String
+  publicFooterInstagramHandle: String
+  publicFooterInstagramUrl: String
+  publicFooterCommercialPhone: String
+  publicFooterSupportPhone: String
+  publicFooterAddressLine1: String
+  publicFooterAddressLine2: String
+  publicFooterMapUrl: String
+  publicFooterPrivacyUrl: String
+  publicFooterCookiesUrl: String
+  publicFooterTermsUrl: String
+  publicFooterCompanyId: String
+  publicFooterSocialInstagram: String
+  publicFooterSocialFacebook: String
+  publicFooterSocialLinkedin: String
+  publicFooterSocialYoutube: String
 }
 
 type TBDCUpdateStats {

@@ -17,6 +17,7 @@ type TBDCCompany {
   focalName: String
   focalEmail: String
   focalPhone: String
+  alihamento: String
   csId: Int
   implantadorId: Int
   cs: TBDCStaff
@@ -119,13 +120,14 @@ type TBDCMutation {
     focalName: String
     focalEmail: String
     focalPhone: String
+    alihamento: String
     csId: Int
     implantadorId: Int
     isActive: Boolean
     permissions: [TBDCPermissionInput]
-  ): TBDCCompany @auth(requires: ["manage:system"])
+  ): TBDCCompany
 
-  deleteCompany(id: Int!): Boolean @auth(requires: ["manage:system"])
+  deleteCompany(id: Int!): Boolean
 
   saveProduct(id: Int, name: String!): TBDCProduct @auth(requires: ["manage:system"])
   deleteProduct(id: Int!): Boolean @auth(requires: ["manage:system"])

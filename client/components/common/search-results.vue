@@ -2,9 +2,9 @@
   .search-results(v-if='searchIsFocused || (search && search.length > 1)')
     .search-results-container
       .text-xs-left.white--text.mb-3(v-if='search && search.length > 1')
-        v-checkbox.d-inline-flex.mr-4(v-model='filterPermissions', label='Permissões', dark, hide-details, color='orange')
         v-checkbox.d-inline-flex.mr-4(v-model='filterPages', label='Processos e serviços', dark, hide-details, color='blue')
-        v-checkbox.d-inline-flex(v-model='filterUpdates', label='Novidades', dark, hide-details, color='green')
+        v-checkbox.d-inline-flex.mr-4(v-model='filterUpdates', label='Novidades', dark, hide-details, color='green')
+        v-checkbox.d-inline-flex(v-model='filterCompanyPermissions', label='Permissões de Empresas', dark, hide-details, color='teal')
       .search-results-help(v-if='!search || (search && search.length < 2)')
         img(src='/_assets/svg/icon-search-alt.svg')
         .mt-4 {{$t('common:header.searchHint')}}
@@ -79,9 +79,9 @@ export default {
         suggestions: [],
         totalHits: 0
       },
-      filterPermissions: true,
       filterPages: true,
-      filterUpdates: true
+      filterUpdates: true,
+      filterCompanyPermissions: true
     }
   },
   computed: {
@@ -163,9 +163,9 @@ export default {
       variables() {
         return {
           query: this.search,
-          filterPermissions: this.filterPermissions,
           filterPages: this.filterPages,
-          filterUpdates: this.filterUpdates
+          filterUpdates: this.filterUpdates,
+          filterPermissions: this.filterCompanyPermissions
         }
       },
       fetchPolicy: 'network-only',

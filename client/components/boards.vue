@@ -249,11 +249,11 @@ export default {
     fCard: { id: null, stageId: null, title: '', description: '', priority: 'medium', status: 'open', startDate: '', dueDate: '', assigneeId: null, estimatePoints: null, coverColor: '', labels: [], checklist: [], attachments: [], watchers: [], customFields: '{}' },
     fTeam: { id: null, name: '', description: '', color: '#546e7a', isArchived: false, memberIds: [], boardIds: [] },
     statusOptions: [
-      { text: 'Aberto', value: 'open' },
-      { text: 'Bloqueado', value: 'blocked' },
-      { text: 'Em andamento', value: 'in-progress' },
-      { text: 'Em revisão', value: 'review' },
-      { text: 'Concluído', value: 'done' }
+      { text: '🔵 Aberto', value: 'open' },
+      { text: '🔴 Bloqueado', value: 'blocked' },
+      { text: '🟡 Em andamento', value: 'in-progress' },
+      { text: '🟣 Em revisão', value: 'review' },
+      { text: '🟢 Concluído', value: 'done' }
     ]
   }),
   created() {
@@ -417,7 +417,7 @@ export default {
     },
     statusLabel(status) {
       const found = _.find(this.statusOptions, ['value', status])
-      return _.get(found, 'text', 'Aberto')
+      return _.get(found, 'text', '🔵 Aberto')
     },
     statusColor(status) {
       switch (status) {
@@ -446,6 +446,20 @@ export default {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    background: #18563B;
+  }
+  .boards-wiki-nav > div {
+    min-height: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #18563B;
+  }
+  .boards-wiki-nav .v-list {
+    margin-bottom: 0;
+    flex: 1 1 auto;
+    min-height: 100%;
+    background: #18563B !important;
   }
   .board-active-item {
     background: rgba(24, 86, 59, 0.1);

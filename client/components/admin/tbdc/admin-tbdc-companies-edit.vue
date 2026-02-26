@@ -10,7 +10,7 @@ v-container(fluid, grid-list-lg)
         v-spacer
         v-btn.ml-3.animated.fadeInDown(color='grey', icon, outlined, to='/')
           v-icon mdi-arrow-left
-        v-btn.ml-3.animated.fadeInDown(v-if='canManage', color='primary', large, depressed, @click='saveCompany', :loading='loading')
+        v-btn.ml-3.animated.fadeInDown(color='primary', large, depressed, @click='saveCompany', :loading='loading')
           v-icon(left) mdi-check
           span Salvar Cliente
 
@@ -108,7 +108,18 @@ v-container(fluid, grid-list-lg)
                           v-icon(small, :color='lvl.color', class='mr-1') mdi-circle
                           span {{ lvl.text }}
                     template(v-slot:item.description='{ item }')
-                      v-text-field(v-model='item.description', dense, hide-details, flat, solo, placeholder='Observações...')
+                      v-textarea(
+                        v-model='item.description'
+                        dense
+                        hide-details
+                        flat
+                        solo
+                        auto-grow
+                        rows='2'
+                        counter='500'
+                        maxlength='500'
+                        placeholder='Observações...'
+                      )
                     template(v-slot:item.isActive='{ item }')
                       v-switch(v-model='item.isActive', dense, hide-details, color='success')
                     template(v-slot:item.actions='{ index }')
@@ -119,12 +130,39 @@ v-container(fluid, grid-list-lg)
                   v-icon(left) mdi-plus-circle-outline
                   span Adicionar Outra Regra
 
+                v-row.mt-4(justify='center')
+                  v-col(cols='12', md='10')
+                    v-card(outlined)
+                      v-toolbar(flat, dense, color='grey lighten-4')
+                        v-toolbar-title.subtitle-2 ALIHAMENTO
+                      v-card-text
+                        .d-flex.flex-wrap.mb-2
+                          v-btn.mr-2.mb-2(icon, small, @click='formatAlihamento("bold")')
+                            v-icon(small) mdi-format-bold
+                          v-btn.mr-2.mb-2(icon, small, @click='formatAlihamento("italic")')
+                            v-icon(small) mdi-format-italic
+                          v-btn.mr-2.mb-2(icon, small, @click='formatAlihamento("underline")')
+                            v-icon(small) mdi-format-underline
+                          v-btn.mr-2.mb-2(icon, small, @click='formatAlihamento("insertUnorderedList")')
+                            v-icon(small) mdi-format-list-bulleted
+                          v-btn.mr-2.mb-2(icon, small, @click='formatAlihamento("insertOrderedList")')
+                            v-icon(small) mdi-format-list-numbered
+                          v-btn.mr-2.mb-2(icon, small, @click='insertAlihamentoLink')
+                            v-icon(small) mdi-link-variant
+                          v-btn.mb-2(icon, small, @click='clearAlihamento')
+                            v-icon(small) mdi-format-clear
+                        .alihamento-editor(
+                          ref='alihamentoEditor'
+                          contenteditable='true'
+                          @input='syncAlihamentoFromEditor'
+                        )
+
               v-card-actions.pa-4
                 v-btn(text, @click='step = 1')
                   v-icon(left) mdi-chevron-left
                   span Voltar
                 v-spacer
-                v-btn(v-if='canManage', color='primary', depressed, large, @click='saveCompany', :loading='loading')
+                v-btn(color='primary', depressed, large, @click='saveCompany', :loading='loading')
                   v-icon(left) mdi-content-save
                   span Finalizar e Salvar Cliente
 
@@ -148,6 +186,7 @@ export default {
         focalName: '',
         focalEmail: '',
         focalPhone: '',
+        alihamento: '',
         isActive: true
       },
       staff: [],
@@ -174,26 +213,20 @@ export default {
     }
   },
   computed: {
-    canManage() {
-      return _.includes(_.get(this.$store, 'state.user.permissions', []), 'manage:system')
-    },
     staffCS() { return _.filter(this.staff, { role: 'CS' }) },
     staffImplantador() { return _.filter(this.staff, { role: 'IMPLANTADOR' }) }
   },
   async created() {
-    if (!this.canManage) {
-      this.$store.commit('showNotification', {
-        message: 'Você não tem permissão para editar clientes.',
-        style: 'warning'
-      })
-      this.$router.push('/')
-      return
-    }
     if (this.$route.params.id) {
       this.isEdit = true
       await this.loadCompany(this.$route.params.id)
     }
     await this.loadPermissionLevels()
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.setAlihamentoEditorContent(this.company.alihamento || '')
+    })
   },
   methods: {
     async loadPermissionLevels() {
@@ -223,7 +256,7 @@ export default {
             query($id: Int!) {
               tbdc {
                 company(id: $id) {
-                  id name focalName focalEmail focalPhone csId implantadorId isActive
+                  id name focalName focalEmail focalPhone alihamento csId implantadorId isActive
                   permissions { id moduleId ruleName level description isActive }
                 }
               }
@@ -235,6 +268,9 @@ export default {
         const data = resp.data.tbdc.company
         this.company = _.omit(data, ['permissions', '__typename'])
         this.permissions = _.map(data.permissions, p => ({ ...p, __typename: undefined }))
+        this.$nextTick(() => {
+          this.setAlihamentoEditorContent(this.company.alihamento || '')
+        })
       } catch (err) { this.$store.commit('pushGraphError', err) }
       this.loading = false
     },
@@ -274,6 +310,53 @@ export default {
         isActive: true
       })
     },
+    syncAlihamentoFromEditor() {
+      const html = _.get(this.$refs, 'alihamentoEditor.innerHTML', '')
+      this.company.alihamento = this.sanitizeAlihamentoHtml(html)
+    },
+    setAlihamentoEditorContent(html) {
+      const editor = this.$refs.alihamentoEditor
+      if (!editor) {
+        return
+      }
+      editor.innerHTML = this.sanitizeAlihamentoHtml(html || '')
+    },
+    sanitizeAlihamentoHtml(html) {
+      if (!_.isString(html)) {
+        return ''
+      }
+      return html
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+        .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, '')
+        .replace(/<object[\s\S]*?>[\s\S]*?<\/object>/gi, '')
+        .replace(/\son\w+="[^"]*"/gi, '')
+    },
+    formatAlihamento(command) {
+      const editor = this.$refs.alihamentoEditor
+      if (!editor) {
+        return
+      }
+      editor.focus()
+      document.execCommand(command, false, null)
+      this.syncAlihamentoFromEditor()
+    },
+    insertAlihamentoLink() {
+      const editor = this.$refs.alihamentoEditor
+      if (!editor) {
+        return
+      }
+      const url = window.prompt('Informe a URL do link:')
+      if (!url) {
+        return
+      }
+      editor.focus()
+      document.execCommand('createLink', false, url)
+      this.syncAlihamentoFromEditor()
+    },
+    clearAlihamento() {
+      this.company.alihamento = ''
+      this.setAlihamentoEditorContent('')
+    },
     removePerm(index) {
       this.permissions.splice(index, 1)
     },
@@ -293,9 +376,10 @@ export default {
             moduleId: parseInt(p.moduleId),
             ruleName: p.ruleName,
             level: p.level,
-            description: p.description,
+            description: _.trim(_.toString(p.description || '')).substring(0, 500),
             isActive: !!p.isActive
-          })).filter(p => Number.isInteger(p.moduleId) && p.moduleId > 0)
+          })).filter(p => Number.isInteger(p.moduleId) && p.moduleId > 0),
+          alihamento: this.sanitizeAlihamentoHtml(this.company.alihamento || '')
         }
 
         if (this.company.id) {
@@ -304,9 +388,9 @@ export default {
 
         await this.$apollo.mutate({
           mutation: gql`
-            mutation($id: Int, $name: String!, $focalName: String, $focalEmail: String, $focalPhone: String, $csId: Int, $implantadorId: Int, $isActive: Boolean, $permissions: [TBDCPermissionInput]) {
+            mutation($id: Int, $name: String!, $focalName: String, $focalEmail: String, $focalPhone: String, $alihamento: String, $csId: Int, $implantadorId: Int, $isActive: Boolean, $permissions: [TBDCPermissionInput]) {
               tbdc {
-                saveCompany(id: $id, name: $name, focalName: $focalName, focalEmail: $focalEmail, focalPhone: $focalPhone, csId: $csId, implantadorId: $implantadorId, isActive: $isActive, permissions: $permissions) {
+                saveCompany(id: $id, name: $name, focalName: $focalName, focalEmail: $focalEmail, focalPhone: $focalPhone, alihamento: $alihamento, csId: $csId, implantadorId: $implantadorId, isActive: $isActive, permissions: $permissions) {
                   id
                 }
               }
@@ -332,3 +416,15 @@ export default {
   }
 }
 </script>
+
+<style lang='scss' scoped>
+.alihamento-editor {
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  border-radius: 4px;
+  padding: 12px;
+  background: #fff;
+  overflow: auto;
+}
+</style>

@@ -13,6 +13,7 @@ class TBDCCompany extends Model {
         focalName: {type: 'string'},
         focalEmail: {type: 'string'},
         focalPhone: {type: 'string'},
+        alihamento: {type: ['string', 'null']},
         csId: {type: ['integer', 'null']},
         implantadorId: {type: ['integer', 'null']},
         isActive: {type: 'boolean'},

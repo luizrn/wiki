@@ -63,10 +63,12 @@ v-container(fluid, grid-list-lg)
                   v-model='config.responsibleUserId'
                 )
                 v-textarea(
-                  label='Links do Menu Lateral (JSON)'
+                  label='Links do Menu Lateral (JSON - somente leitura)'
                   v-model='config.sidebarLinks'
                   rows='5'
-                  hint='Ex: [{"label": "Suporte", "icon": "mdi-help", "url": "/help"}]'
+                  readonly
+                  hint='Gerencie os links na aba Dados Mestres.'
+                  persistent-hint
                 )
               v-card-actions
                 v-spacer
@@ -110,6 +112,104 @@ v-container(fluid, grid-list-lg)
                         v-icon(small) mdi-pencil
                       v-btn(icon, small, color='red', @click='deleteTarget(target)')
                         v-icon(small) mdi-delete
+                v-divider.my-4
+                .d-flex.align-center
+                  .overline Identidade do Cabeçalho Público
+                v-row
+                  v-col(cols='12', md='4')
+                    v-text-field(
+                      v-model='config.publicHeaderLogoUrl'
+                      label='Logo URL'
+                      outlined
+                      dense
+                      placeholder='/_assets/img/tbdc-agro-logo.png'
+                    )
+                  v-col(cols='12', md='4')
+                    v-text-field(
+                      v-model='config.publicHeaderTitle'
+                      label='Título'
+                      outlined
+                      dense
+                      placeholder='Novidades TBDC'
+                    )
+                  v-col(cols='12', md='4')
+                    v-text-field(
+                      v-model='config.publicHeaderSubtitle'
+                      label='Subtítulo'
+                      outlined
+                      dense
+                      placeholder='Central pública de comunicados e atualizações'
+                    )
+                .d-flex.justify-end.mt-2
+                  v-btn(color='primary', @click='saveConfig')
+                    v-icon(left, small) mdi-content-save
+                    span Salvar Cabeçalho
+                v-divider.my-4
+                .d-flex.align-center
+                  .overline Rodapé Público
+                v-row
+                  v-col(cols='12', md='4')
+                    v-text-field(v-model='config.publicFooterInstagramText', label='Texto Instagram', outlined, dense)
+                  v-col(cols='12', md='4')
+                    v-text-field(v-model='config.publicFooterInstagramHandle', label='Handle Instagram', outlined, dense)
+                  v-col(cols='12', md='4')
+                    v-text-field(v-model='config.publicFooterInstagramUrl', label='URL Instagram', outlined, dense)
+                  v-col(cols='12', md='6')
+                    v-text-field(v-model='config.publicFooterCommercialPhone', label='Telefone Comercial', outlined, dense)
+                  v-col(cols='12', md='6')
+                    v-text-field(v-model='config.publicFooterSupportPhone', label='Telefone Suporte', outlined, dense)
+                  v-col(cols='12', md='6')
+                    v-text-field(v-model='config.publicFooterAddressLine1', label='Endereço Linha 1', outlined, dense)
+                  v-col(cols='12', md='6')
+                    v-text-field(v-model='config.publicFooterAddressLine2', label='Endereço Linha 2', outlined, dense)
+                  v-col(cols='12', md='6')
+                    v-text-field(v-model='config.publicFooterMapUrl', label='URL do mapa', outlined, dense)
+                  v-col(cols='12', md='6')
+                    v-text-field(v-model='config.publicFooterCompanyId', label='Texto legal/CNPJ', outlined, dense)
+                  v-col(cols='12', md='4')
+                    v-text-field(v-model='config.publicFooterPrivacyUrl', label='URL Política de Privacidade', outlined, dense)
+                  v-col(cols='12', md='4')
+                    v-text-field(v-model='config.publicFooterCookiesUrl', label='URL Política de Cookies', outlined, dense)
+                  v-col(cols='12', md='4')
+                    v-text-field(v-model='config.publicFooterTermsUrl', label='URL Termos de uso', outlined, dense)
+                  v-col(cols='12', md='3')
+                    v-text-field(v-model='config.publicFooterSocialInstagram', label='Rede Instagram', outlined, dense)
+                  v-col(cols='12', md='3')
+                    v-text-field(v-model='config.publicFooterSocialFacebook', label='Rede Facebook', outlined, dense)
+                  v-col(cols='12', md='3')
+                    v-text-field(v-model='config.publicFooterSocialLinkedin', label='Rede LinkedIn', outlined, dense)
+                  v-col(cols='12', md='3')
+                    v-text-field(v-model='config.publicFooterSocialYoutube', label='Rede YouTube', outlined, dense)
+                .d-flex.justify-end.mt-2
+                  v-btn(color='primary', @click='saveConfig')
+                    v-icon(left, small) mdi-content-save
+                    span Salvar Rodapé
+                v-divider.my-4
+                .d-flex.align-center
+                  .overline Links Úteis (Menu lateral público)
+                  v-spacer
+                  v-btn(small, color='primary', @click='openLinkEditor()')
+                    v-icon(left, small) mdi-plus
+                    span Novo Link
+                v-list(dense)
+                  v-list-item(v-if='sidebarLinksItems.length < 1', disabled)
+                    v-list-item-content
+                      v-list-item-title Nenhum link cadastrado
+                  v-list-item(v-for='(link, idx) in sidebarLinksItems', :key='`link-${idx}-${link.label}`')
+                    v-list-item-icon
+                      v-icon {{ link.icon || 'mdi-open-in-new' }}
+                    v-list-item-content
+                      v-list-item-title {{ link.label }}
+                      v-list-item-subtitle {{ link.url }}
+                    v-list-item-action
+                      v-btn(icon, small, @click='openLinkEditor(link, idx)')
+                        v-icon(small) mdi-pencil
+                      v-btn(icon, small, color='red', @click='deleteLink(idx)')
+                        v-icon(small) mdi-delete
+                .d-flex.justify-end.mt-2
+                  v-btn(color='primary', @click='saveLinksOnly')
+                    v-icon(left, small) mdi-content-save
+                    span Salvar Links
 
     //- EDITOR DIALOG
     v-dialog(v-model='isEditorOpen', fullscreen, transition='dialog-bottom-transition')
@@ -146,7 +246,17 @@ v-container(fluid, grid-list-lg)
             v-col(cols='6')
               v-text-field(v-model='categoryEdit.color', label='Cor HEX', outlined, dense, placeholder='#18563B')
             v-col(cols='6')
-              v-text-field(v-model='categoryEdit.icon', label='Ícone (MDI)', outlined, dense, placeholder='mdi-tag')
+              v-combobox(
+                v-model='categoryEdit.icon'
+                :items='iconOptions'
+                label='Ícone (MDI)'
+                outlined
+                dense
+                clearable
+                hint='Ex.: mdi-tag'
+                persistent-hint
+                :prepend-inner-icon='categoryEdit.icon || `mdi-tag`'
+              )
           v-row
             v-col(cols='6')
               v-text-field(v-model.number='categoryEdit.order', type='number', label='Ordem', outlined, dense)
@@ -163,11 +273,44 @@ v-container(fluid, grid-list-lg)
         v-card-title {{ targetEdit.id ? 'Editar Público-Alvo' : 'Novo Público-Alvo' }}
         v-card-text
           v-text-field(v-model='targetEdit.name', label='Nome', outlined, dense)
-          v-text-field(v-model='targetEdit.icon', label='Ícone (MDI)', outlined, dense, placeholder='mdi-account-group')
+          v-combobox(
+            v-model='targetEdit.icon'
+            :items='iconOptions'
+            label='Ícone (MDI)'
+            outlined
+            dense
+            clearable
+            hint='Ex.: mdi-account-group'
+            persistent-hint
+            :prepend-inner-icon='targetEdit.icon || `mdi-account-group`'
+          )
         v-card-actions
           v-spacer
           v-btn(text, @click='isTargetEditorOpen = false') Cancelar
           v-btn(color='primary', @click='saveTarget') Salvar
+
+    //- LINKS DIALOG
+    v-dialog(v-model='isLinkEditorOpen', max-width='620')
+      v-card
+        v-card-title {{ linkEdit.index >= 0 ? 'Editar Link Útil' : 'Novo Link Útil' }}
+        v-card-text
+          v-text-field(v-model='linkEdit.label', label='Label', outlined, dense, placeholder='Ex.: Portal do Cliente')
+          v-text-field(v-model='linkEdit.url', label='Link', outlined, dense, placeholder='https://...')
+          v-combobox(
+            v-model='linkEdit.icon'
+            :items='iconOptions'
+            label='Ícone (MDI)'
+            outlined
+            dense
+            clearable
+            hint='Ex.: mdi-open-in-new'
+            persistent-hint
+            :prepend-inner-icon='linkEdit.icon || `mdi-open-in-new`'
+          )
+        v-card-actions
+          v-spacer
+          v-btn(text, @click='isLinkEditorOpen = false') Cancelar
+          v-btn(color='primary', @click='saveLink') Salvar
 
 </template>
 
@@ -186,12 +329,33 @@ export default {
       stats: { happy: 0, neutral: 0, sad: 0 },
       config: {
         responsibleUserId: 1,
-        sidebarLinks: '[]'
+        sidebarLinks: '[]',
+        publicHeaderTitle: 'Novidades TBDC',
+        publicHeaderSubtitle: 'Central pública de comunicados e atualizações',
+        publicHeaderLogoUrl: '/_assets/img/tbdc-agro-logo.png',
+        publicFooterInstagramText: 'Siga-nos no Instagram',
+        publicFooterInstagramHandle: '@tbdcagro',
+        publicFooterInstagramUrl: 'https://www.instagram.com/tbdcagro/',
+        publicFooterCommercialPhone: '65 99623-2985',
+        publicFooterSupportPhone: '65 99990-0123',
+        publicFooterAddressLine1: 'Av. das Arapongas, 1104 N, Jardim das Orquídeas,',
+        publicFooterAddressLine2: 'Nova Mutum - MT, 78452-006',
+        publicFooterMapUrl: 'https://maps.google.com/?q=Av.+das+Arapongas,+1104+Nova+Mutum+MT',
+        publicFooterPrivacyUrl: 'https://www.tbdc.com.br/',
+        publicFooterCookiesUrl: 'https://www.tbdc.com.br/',
+        publicFooterTermsUrl: 'https://www.tbdc.com.br/',
+        publicFooterCompanyId: '© TBDC - 28.845.223/0001-79',
+        publicFooterSocialInstagram: 'https://www.instagram.com/tbdcagro/',
+        publicFooterSocialFacebook: 'https://www.facebook.com/',
+        publicFooterSocialLinkedin: 'https://www.linkedin.com/',
+        publicFooterSocialYoutube: 'https://www.youtube.com/'
       },
+      sidebarLinksItems: [],
       isEditorOpen: false,
       editorMode: 'create',
       isCategoryEditorOpen: false,
       isTargetEditorOpen: false,
+      isLinkEditorOpen: false,
       categoryEdit: {
         id: null,
         name: '',
@@ -205,6 +369,12 @@ export default {
         name: '',
         icon: 'mdi-account-group'
       },
+      linkEdit: {
+        index: -1,
+        label: '',
+        url: '',
+        icon: 'mdi-open-in-new'
+      },
       editItem: {
         title: '',
         content: '',
@@ -213,6 +383,30 @@ export default {
         targetId: null,
         isPublished: false
       },
+      iconOptions: [
+        'mdi-tag',
+        'mdi-open-in-new',
+        'mdi-link-variant',
+        'mdi-web',
+        'mdi-help-circle-outline',
+        'mdi-lifebuoy',
+        'mdi-book-open-page-variant',
+        'mdi-file-document-outline',
+        'mdi-folder-open',
+        'mdi-account-group',
+        'mdi-account-tie',
+        'mdi-briefcase-outline',
+        'mdi-cog',
+        'mdi-cog-outline',
+        'mdi-domain',
+        'mdi-office-building',
+        'mdi-cloud-outline',
+        'mdi-database-outline',
+        'mdi-chart-line',
+        'mdi-wrench-outline',
+        'mdi-phone-outline',
+        'mdi-email-outline'
+      ],
       headers: [
         { text: 'Postagem', value: 'title' },
         { text: 'Data', value: 'publishedAt' },
@@ -234,7 +428,13 @@ export default {
               listUpdates(limit: 100) { items { id title content summary categoryId category { name color } isPublished publishedAt updatedAt } }
               categories { id name color icon showOnPublicPage order }
               targets { id name icon }
-              adminConfig { responsibleUserId sidebarLinks }
+              adminConfig {
+                responsibleUserId sidebarLinks publicHeaderTitle publicHeaderSubtitle publicHeaderLogoUrl
+                publicFooterInstagramText publicFooterInstagramHandle publicFooterInstagramUrl
+                publicFooterCommercialPhone publicFooterSupportPhone publicFooterAddressLine1 publicFooterAddressLine2
+                publicFooterMapUrl publicFooterPrivacyUrl publicFooterCookiesUrl publicFooterTermsUrl
+                publicFooterCompanyId publicFooterSocialInstagram publicFooterSocialFacebook publicFooterSocialLinkedin publicFooterSocialYoutube
+              }
             }
             users {
               list(orderBy: "name") { id name isActive isSystem }
@@ -245,7 +445,30 @@ export default {
         this.updates = resp.data.tbdcUpdates.listUpdates.items
         this.categories = resp.data.tbdcUpdates.categories
         this.targets = resp.data.tbdcUpdates.targets
-        this.config = resp.data.tbdcUpdates.adminConfig
+        this.config = Object.assign({
+          responsibleUserId: null,
+          sidebarLinks: '[]',
+          publicHeaderTitle: 'Novidades TBDC',
+          publicHeaderSubtitle: 'Central pública de comunicados e atualizações',
+          publicHeaderLogoUrl: '/_assets/img/tbdc-agro-logo.png',
+          publicFooterInstagramText: 'Siga-nos no Instagram',
+          publicFooterInstagramHandle: '@tbdcagro',
+          publicFooterInstagramUrl: 'https://www.instagram.com/tbdcagro/',
+          publicFooterCommercialPhone: '65 99623-2985',
+          publicFooterSupportPhone: '65 99990-0123',
+          publicFooterAddressLine1: 'Av. das Arapongas, 1104 N, Jardim das Orquídeas,',
+          publicFooterAddressLine2: 'Nova Mutum - MT, 78452-006',
+          publicFooterMapUrl: 'https://maps.google.com/?q=Av.+das+Arapongas,+1104+Nova+Mutum+MT',
+          publicFooterPrivacyUrl: 'https://www.tbdc.com.br/',
+          publicFooterCookiesUrl: 'https://www.tbdc.com.br/',
+          publicFooterTermsUrl: 'https://www.tbdc.com.br/',
+          publicFooterCompanyId: '© TBDC - 28.845.223/0001-79',
+          publicFooterSocialInstagram: 'https://www.instagram.com/tbdcagro/',
+          publicFooterSocialFacebook: 'https://www.facebook.com/',
+          publicFooterSocialLinkedin: 'https://www.linkedin.com/',
+          publicFooterSocialYoutube: 'https://www.youtube.com/'
+        }, resp.data.tbdcUpdates.adminConfig || {})
+        this.sidebarLinksItems = this.parseSidebarLinks(this.config.sidebarLinks)
         this.staff = (resp.data.users.list || []).filter(u => u.isActive && !u.isSystem).map(u => ({
           id: u.id,
           name: u.name
@@ -257,6 +480,27 @@ export default {
         this.$store.commit('pushGraphError', err)
       }
       this.loading = false
+    },
+    parseSidebarLinks(raw) {
+      try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw || '[]') : (Array.isArray(raw) ? raw : [])
+        if (!Array.isArray(parsed)) {
+          return []
+        }
+        return parsed
+          .filter(item => item && typeof item === 'object')
+          .map(item => ({
+            label: (item.label || '').toString().trim(),
+            url: (item.url || item.link || '').toString().trim(),
+            icon: (item.icon || 'mdi-open-in-new').toString().trim()
+          }))
+          .filter(item => item.label && item.url)
+      } catch (err) {
+        return []
+      }
+    },
+    syncSidebarLinksConfig() {
+      this.config.sidebarLinks = JSON.stringify(this.sidebarLinksItems)
     },
     editPost(item) {
       this.editItem = { ...item }
@@ -378,6 +622,53 @@ export default {
         this.$store.commit('pushGraphError', err)
       }
     },
+    openLinkEditor(link = null, index = -1) {
+      if (link) {
+        this.linkEdit = {
+          index,
+          label: link.label || '',
+          url: link.url || '',
+          icon: link.icon || 'mdi-open-in-new'
+        }
+      } else {
+        this.linkEdit = {
+          index: -1,
+          label: '',
+          url: '',
+          icon: 'mdi-open-in-new'
+        }
+      }
+      this.isLinkEditorOpen = true
+    },
+    saveLink() {
+      const label = (this.linkEdit.label || '').trim()
+      const url = (this.linkEdit.url || '').trim()
+      const icon = (this.linkEdit.icon || 'mdi-open-in-new').trim()
+      if (!label || !url) {
+        this.$store.commit('showError', 'Preencha Label e Link.')
+        return
+      }
+
+      const payload = { label, url, icon }
+      if (this.linkEdit.index >= 0) {
+        this.$set(this.sidebarLinksItems, this.linkEdit.index, payload)
+      } else {
+        this.sidebarLinksItems.push(payload)
+      }
+      this.syncSidebarLinksConfig()
+      this.isLinkEditorOpen = false
+    },
+    deleteLink(index) {
+      if (index < 0 || index >= this.sidebarLinksItems.length) {
+        return
+      }
+      this.sidebarLinksItems.splice(index, 1)
+      this.syncSidebarLinksConfig()
+    },
+    async saveLinksOnly() {
+      this.syncSidebarLinksConfig()
+      await this.saveConfig()
+    },
     async savePost() {
       try {
         await this.$apollo.mutate({
@@ -424,15 +715,63 @@ export default {
     },
     async saveConfig() {
       try {
+        this.syncSidebarLinksConfig()
         await this.$apollo.mutate({
-          mutation: gql`mutation($u: Int, $s: String) {
+          mutation: gql`mutation(
+            $u: Int, $s: String, $t: String, $st: String, $l: String,
+            $fit: String, $fih: String, $fiu: String,
+            $fcp: String, $fsp: String, $fal1: String, $fal2: String, $fmu: String,
+            $fpr: String, $fco: String, $fte: String, $fci: String,
+            $fsi: String, $fsf: String, $fsl: String, $fsy: String
+          ) {
             tbdcUpdates {
-              saveConfig(responsibleUserId: $u, sidebarLinks: $s) { responseResult { message } }
+              saveConfig(
+                responsibleUserId: $u,
+                sidebarLinks: $s,
+                publicHeaderTitle: $t,
+                publicHeaderSubtitle: $st,
+                publicHeaderLogoUrl: $l,
+                publicFooterInstagramText: $fit,
+                publicFooterInstagramHandle: $fih,
+                publicFooterInstagramUrl: $fiu,
+                publicFooterCommercialPhone: $fcp,
+                publicFooterSupportPhone: $fsp,
+                publicFooterAddressLine1: $fal1,
+                publicFooterAddressLine2: $fal2,
+                publicFooterMapUrl: $fmu,
+                publicFooterPrivacyUrl: $fpr,
+                publicFooterCookiesUrl: $fco,
+                publicFooterTermsUrl: $fte,
+                publicFooterCompanyId: $fci,
+                publicFooterSocialInstagram: $fsi,
+                publicFooterSocialFacebook: $fsf,
+                publicFooterSocialLinkedin: $fsl,
+                publicFooterSocialYoutube: $fsy
+              ) { responseResult { message } }
             }
           }`,
           variables: {
-            u: parseInt(this.config.responsibleUserId),
-            s: this.config.sidebarLinks
+            u: this.config.responsibleUserId ? parseInt(this.config.responsibleUserId) : null,
+            s: this.config.sidebarLinks,
+            t: this.config.publicHeaderTitle,
+            st: this.config.publicHeaderSubtitle,
+            l: this.config.publicHeaderLogoUrl,
+            fit: this.config.publicFooterInstagramText,
+            fih: this.config.publicFooterInstagramHandle,
+            fiu: this.config.publicFooterInstagramUrl,
+            fcp: this.config.publicFooterCommercialPhone,
+            fsp: this.config.publicFooterSupportPhone,
+            fal1: this.config.publicFooterAddressLine1,
+            fal2: this.config.publicFooterAddressLine2,
+            fmu: this.config.publicFooterMapUrl,
+            fpr: this.config.publicFooterPrivacyUrl,
+            fco: this.config.publicFooterCookiesUrl,
+            fte: this.config.publicFooterTermsUrl,
+            fci: this.config.publicFooterCompanyId,
+            fsi: this.config.publicFooterSocialInstagram,
+            fsf: this.config.publicFooterSocialFacebook,
+            fsl: this.config.publicFooterSocialLinkedin,
+            fsy: this.config.publicFooterSocialYoutube
           }
         })
         this.$store.commit('showSuccess', 'Configurações salvas!')

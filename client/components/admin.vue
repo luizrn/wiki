@@ -86,6 +86,18 @@
             v-list-item(to='/azure-devops-wiki', color='primary')
               v-list-item-avatar(size='24', tile): v-icon mdi-microsoft-azure-devops
               v-list-item-title Azure DevOps Wiki
+            v-list-item(to='/webhooks', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-webhook
+              v-list-item-title Webhooks
+            v-list-item(to='/public-links', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-link-variant
+              v-list-item-title Links Públicos
+            v-list-item(to='/tbdc-updates', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-update
+              v-list-item-title Novidades
+            v-list-item(to='/tbdc-master', color='primary', v-if='hasPermission(`manage:system`)')
+              v-list-item-avatar(size='24', tile): v-icon mdi-shield-crown
+              v-list-item-title TBDC Master
           template(v-if='hasPermission([`manage:system`, `manage:api`])')
             v-divider.my-2
             v-subheader.pl-4 {{ $t('admin:nav.system') }}
@@ -107,18 +119,6 @@
             v-list-item(to='/utilities', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-wrench-outline
               v-list-item-title {{ $t('admin:utilities.title') }}
-            v-list-item(to='/webhooks', color='primary', v-if='hasPermission(`manage:system`)')
-              v-list-item-avatar(size='24', tile): v-icon mdi-webhook
-              v-list-item-title Webhooks
-            v-list-item(to='/public-links', color='primary', v-if='hasPermission(`manage:system`)')
-              v-list-item-avatar(size='24', tile): v-icon mdi-link-variant
-              v-list-item-title Links Públicos
-            v-list-item(to='/tbdc-updates', color='primary', v-if='hasPermission(`manage:system`)')
-              v-list-item-avatar(size='24', tile): v-icon mdi-update
-              v-list-item-title Novidades
-            v-list-item(to='/tbdc-master', color='primary', v-if='hasPermission(`manage:system`)')
-              v-list-item-avatar(size='24', tile): v-icon mdi-shield-crown
-              v-list-item-title TBDC Master
             v-list-group(
               to='/dev'
               no-action

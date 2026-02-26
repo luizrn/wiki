@@ -1,16 +1,16 @@
 <template lang='pug'>
 .tbdc-updates-public
   //- HEADER
-  .updates-header
+  .updates-header(:class='{ "mobile-hidden": isMobile }')
     v-container.py-5
-      v-layout(align-center, wrap)
+      .header-top
         .brand-wrap
           img.brand-logo(:src='logoSrc', alt='TBDC', @error='onLogoError')
           .brand-copy
-            .brand-title Novidades TBDC
-            .brand-subtitle Central pública de comunicados e atualizações
-        v-spacer
-        .updates-links.hidden-sm-and-down
+            .brand-title {{ headerTitle }}
+            .brand-subtitle {{ headerSubtitle }}
+      .updates-links-wrap.hidden-sm-and-down
+        .updates-links
           v-chip(
             outlined
             small
@@ -20,7 +20,7 @@
             @click='filterBy(null)'
           ) Todos
           v-chip(
-            v-for='cat in categories.slice(0, 4)'
+            v-for='cat in categories'
             :key='cat.id'
             outlined
             small
@@ -33,7 +33,7 @@
   v-container.updates-content
     v-layout(row, wrap)
       //- SIDEBAR (ESQUERDA)
-      v-flex(xs12, md3)
+      v-flex(xs12, md3, v-if='!isMobile')
         .updates-sidebar
           v-card.sidebar-card(elevation='1')
             v-card-text.pb-3
@@ -74,8 +74,13 @@
                   v-list-item-content: v-list-item-title {{link.label}}
 
       //- FEED (DIREITA)
-      v-flex(xs12, md9)
+      v-flex(xs12, :md9='!isMobile', :md12='isMobile')
         .updates-feed
+          .mobile-toolbar(v-if='isMobile')
+            v-btn.mobile-menu-btn(color='var(--tbdc-primary)', dark, depressed, rounded, @click='mobileMenu = true')
+              v-icon(left, small) mdi-tune-variant
+              | Menu e Filtros
+            .mobile-menu-badge Menu
           v-layout(column)
             template(v-if='loading && updates.length === 0')
               v-skeleton-loader(v-for='i in 3', :key='i', type='article, actions', class='mb-6')
@@ -117,6 +122,108 @@
                       v-icon(size='30') mdi-emoticon-neutral-outline
                     v-btn(icon, @click='vote(post.id, 1)', :color='myVotes[post.id] === 1 ? "red" : "grey"')
                       v-icon(size='30') mdi-emoticon-sad-outline
+
+  v-navigation-drawer.mobile-drawer(
+    v-model='mobileMenu'
+    temporary
+    right
+    fixed
+    width='320'
+    disable-resize-watcher
+    v-if='isMobile'
+  )
+    .mobile-drawer-head
+      .mobile-drawer-title Filtros
+      v-btn(icon, small, @click='mobileMenu = false')
+        v-icon mdi-close
+    .mobile-drawer-content
+      v-text-field(
+        v-model='search'
+        placeholder='Pesquisar novidades...'
+        prepend-inner-icon='mdi-magnify'
+        outlined
+        rounded
+        dense
+        hide-details
+        background-color='white'
+        class='mb-4'
+      )
+      .section-title Produtos TBDC
+      v-list(dense, class='sidebar-list')
+        v-list-item(
+          :class='{ "is-active": selectedCategory === null }'
+          @click='filterBy(null); mobileMenu = false'
+        )
+          v-list-item-icon: v-icon(small) mdi-apps
+          v-list-item-content: v-list-item-title Todos
+        v-list-item(
+          v-for='cat in categories'
+          :key='cat.id'
+          :class='{ "is-active": selectedCategory === cat.id }'
+          @click='filterBy(cat.id); mobileMenu = false'
+        )
+          v-list-item-icon: v-icon(small, :color='cat.color') mdi-circle-medium
+          v-list-item-content: v-list-item-title {{cat.name}}
+      .section-title.mt-6 Links úteis
+      v-list(dense, class='sidebar-list')
+        v-list-item(v-if='sidebarLinks.length === 0', disabled)
+          v-list-item-content: v-list-item-title Nenhum link cadastrado
+        v-list-item(v-for='link in sidebarLinks', :key='link.label', :href='link.url', target='_blank')
+          v-list-item-icon: v-icon(small, color='var(--tbdc-primary)') {{link.icon || 'mdi-open-in-new'}}
+          v-list-item-content: v-list-item-title {{link.label}}
+
+  footer.updates-footer
+    .ig-strip
+      v-container
+        .ig-inner
+          .ig-title {{ publicFooter.instagramText }}
+          a.ig-link(:href='publicFooter.instagramUrl', target='_blank', rel='noopener')
+            v-icon(left, color='#7dbd3b') mdi-instagram
+            | {{ publicFooter.instagramHandle }}
+    .footer-main
+      v-container
+        v-row(align='center')
+          v-col(cols='12', md='3')
+            .footer-logo-wrap
+              img.footer-logo(:src='logoSrc', alt='TBDC')
+          v-col(cols='12', md='3')
+            .footer-contact
+              .contact-item
+                v-icon(small, color='#7dbd3b') mdi-whatsapp
+                .contact-text
+                  .label Comercial:
+                  .value {{ publicFooter.commercialPhone }}
+              .contact-item
+                v-icon(small, color='#7dbd3b') mdi-whatsapp
+                .contact-text
+                  .label Suporte:
+                  .value {{ publicFooter.supportPhone }}
+          v-col(cols='12', md='4')
+            .footer-address
+              v-icon(small, color='#7dbd3b') mdi-map-marker
+              .address-text
+                .label Endereço:
+                .value {{ publicFooter.addressLine1 }}
+                .value {{ publicFooter.addressLine2 }}
+                a.map-link(:href='publicFooter.mapUrl', target='_blank', rel='noopener') Ver no mapa
+          v-col(cols='12', md='2')
+            .social-list
+              a(:href='publicFooter.socialInstagram', target='_blank', rel='noopener')
+                v-icon(color='#7dbd3b') mdi-instagram
+              a(:href='publicFooter.socialFacebook', target='_blank', rel='noopener')
+                v-icon(color='#7dbd3b') mdi-facebook
+              a(:href='publicFooter.socialLinkedin', target='_blank', rel='noopener')
+                v-icon(color='#7dbd3b') mdi-linkedin
+              a(:href='publicFooter.socialYoutube', target='_blank', rel='noopener')
+                v-icon(color='#7dbd3b') mdi-youtube
+    .footer-bottom
+      v-container
+        .bottom-inner
+          .legal-links
+            a(:href='publicFooter.privacyUrl', target='_blank', rel='noopener') Política de Privacidade
+            a(:href='publicFooter.cookiesUrl', target='_blank', rel='noopener') Política de Cookies
+            a(:href='publicFooter.termsUrl', target='_blank', rel='noopener') Termos de uso
+          .company-id {{ publicFooter.companyId }}
 </template>
 
 <script>
@@ -134,7 +241,28 @@ export default {
       search: '',
       selectedCategory: null,
       myVotes: {},
-      logoSrc: '/_assets/img/tbdc-agro-logo.png'
+      logoSrc: '/_assets/img/tbdc-agro-logo.png',
+      headerTitle: 'Novidades TBDC',
+      headerSubtitle: 'Central pública de comunicados e atualizações',
+      publicFooter: {
+        instagramText: 'Siga-nos no Instagram',
+        instagramHandle: '@tbdcagro',
+        instagramUrl: 'https://www.instagram.com/tbdcagro/',
+        commercialPhone: '65 99623-2985',
+        supportPhone: '65 99990-0123',
+        addressLine1: 'Av. das Arapongas, 1104 N, Jardim das Orquídeas,',
+        addressLine2: 'Nova Mutum - MT, 78452-006',
+        mapUrl: 'https://maps.google.com/?q=Av.+das+Arapongas,+1104+Nova+Mutum+MT',
+        privacyUrl: 'https://www.tbdc.com.br/',
+        cookiesUrl: 'https://www.tbdc.com.br/',
+        termsUrl: 'https://www.tbdc.com.br/',
+        companyId: '© TBDC - 28.845.223/0001-79',
+        socialInstagram: 'https://www.instagram.com/tbdcagro/',
+        socialFacebook: 'https://www.facebook.com/',
+        socialLinkedin: 'https://www.linkedin.com/',
+        socialYoutube: 'https://www.youtube.com/'
+      },
+      mobileMenu: false
     }
   },
   computed: {
@@ -150,6 +278,9 @@ export default {
         const matchCat = this.selectedCategory ? u.categoryId === this.selectedCategory : true
         return matchSearch && matchCat
       })
+    },
+    isMobile() {
+      return _.get(this, '$vuetify.breakpoint.smAndDown', false)
     }
   },
   async mounted() {
@@ -176,6 +307,10 @@ export default {
         this.updates = data.updates || []
         this.categories = data.categories || []
         this.sidebarLinks = data.sidebarLinks || []
+        this.headerTitle = _.get(data, 'publicHeader.title', 'Novidades TBDC')
+        this.headerSubtitle = _.get(data, 'publicHeader.subtitle', 'Central pública de comunicados e atualizações')
+        this.logoSrc = _.get(data, 'publicHeader.logoUrl', '/_assets/img/tbdc-agro-logo.png')
+        this.publicFooter = Object.assign({}, this.publicFooter, _.get(data, 'publicFooter', {}))
       } catch (err) {
         console.error(err)
       }
@@ -240,6 +375,16 @@ export default {
   color: #fff;
 }
 
+.updates-header.mobile-hidden {
+  display: none;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .brand-wrap {
   display: flex;
   align-items: center;
@@ -259,23 +404,65 @@ export default {
 }
 
 .brand-title {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.4px;
 }
 
 .brand-subtitle {
-  font-size: 14px;
-  opacity: 0.9;
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.94;
+  line-height: 1.35;
+}
+
+.updates-links-wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
 }
 
 .updates-links {
   display: flex;
   gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: max-content;
+}
+
+.updates-links .v-chip {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.25px;
+  text-transform: none;
+  color: #fff !important;
+}
+
+.updates-links .v-chip .v-chip__content {
+  line-height: 1.1;
+  color: #fff !important;
+}
+
+.updates-links .v-chip.v-chip--active,
+.updates-links .v-chip:hover,
+.updates-links .v-chip:focus {
+  color: #fff !important;
+}
+
+.updates-links .v-chip.v-chip--active .v-chip__content,
+.updates-links .v-chip:hover .v-chip__content,
+.updates-links .v-chip:focus .v-chip__content {
+  color: #fff !important;
 }
 
 .updates-content {
   padding: 28px 0 40px;
+}
+
+.mobile-toolbar {
+  display: none;
 }
 
 .updates-sidebar {
@@ -382,6 +569,146 @@ export default {
   margin-top: 8px;
 }
 
+.mobile-drawer {
+  z-index: 1000;
+}
+
+.mobile-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e6ece8;
+}
+
+.mobile-drawer-title {
+  font-weight: 800;
+  font-size: 16px;
+  color: #1d3a2b;
+}
+
+.mobile-drawer-content {
+  padding: 12px;
+}
+
+.updates-footer {
+  margin-top: 24px;
+  background: #f4f6f8;
+  border-top: 1px solid #dde5df;
+}
+
+.ig-strip {
+  background: #eef5e9;
+  border-bottom: 1px solid #dde6dd;
+}
+
+.ig-inner {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+}
+
+.ig-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: #16543a;
+}
+
+.ig-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 32px;
+  font-weight: 800;
+  color: #7dbd3b;
+  text-decoration: none;
+}
+
+.footer-main {
+  background: #f6f7f9;
+  padding: 24px 0;
+}
+
+.footer-logo-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.footer-logo {
+  width: 180px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.footer-contact, .footer-address {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  gap: 10px;
+}
+
+.contact-text .label,
+.address-text .label {
+  font-weight: 800;
+  color: #5e6f89;
+}
+
+.contact-text .value,
+.address-text .value {
+  color: #627590;
+  line-height: 1.35;
+}
+
+.footer-address {
+  flex-direction: row;
+}
+
+.map-link {
+  color: #7dbd3b;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.social-list {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.social-list a {
+  text-decoration: none;
+}
+
+.footer-bottom {
+  border-top: 1px solid #e1e6e3;
+  background: #f0f2f4;
+}
+
+.bottom-inner {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.legal-links {
+  display: flex;
+  gap: 22px;
+}
+
+.legal-links a,
+.company-id {
+  color: #7f8ea5;
+  font-size: 13px;
+  text-decoration: none;
+}
+
 @media (max-width: 960px) {
   .updates-sidebar {
     position: static;
@@ -390,7 +717,7 @@ export default {
   }
 
   .brand-title {
-    font-size: 20px;
+    font-size: 26px;
   }
 
   .post-title {
@@ -399,8 +726,106 @@ export default {
 }
 
 @media (max-width: 600px) {
+  .tbdc-updates-public {
+    background: #f3f7f4;
+  }
+
+  .updates-content {
+    padding-top: 10px;
+    padding-bottom: 20px;
+  }
+
+  .mobile-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 10px;
+    padding: 2px 2px 8px;
+  }
+
+  .mobile-menu-btn {
+    text-transform: none !important;
+    font-weight: 700 !important;
+  }
+
+  .mobile-menu-badge {
+    margin-left: 8px;
+    min-width: 68px;
+    height: 34px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1d3a2b;
+    border: 1px solid rgba(24, 86, 59, 0.35);
+    background: #f0f7f3;
+  }
+
+  .post-card {
+    border-radius: 12px !important;
+    border-left-width: 4px;
+    margin-bottom: 14px;
+  }
+
+  .post-title {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .post-body {
+    font-size: 15px;
+    line-height: 1.64;
+  }
+
+  .resource-target {
+    padding: 12px !important;
+  }
+
+  .empty-state {
+    padding: 32px 16px;
+  }
+
+  .ig-inner {
+    min-height: 70px;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+  }
+
+  .ig-title {
+    font-size: 22px;
+  }
+
+  .ig-link {
+    font-size: 20px;
+  }
+
+  .footer-main {
+    padding: 16px 0;
+  }
+
+  .footer-logo {
+    width: 140px;
+    height: 56px;
+  }
+
+  .bottom-inner {
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .legal-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
   .brand-subtitle {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .brand-logo {

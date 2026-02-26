@@ -33,6 +33,7 @@ type PageQuery {
     filterPermissions: Boolean
     filterPages: Boolean
     filterUpdates: Boolean
+    filterCompanyPermissions: Boolean
   ): PageSearchResponse! @auth(requires: ["manage:system", "read:pages"])
 
   list(

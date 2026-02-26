@@ -43,6 +43,20 @@ async function ensurePermissionLevelsTable () {
   }
 }
 
+async function ensureCompaniesAlihamentoColumn () {
+  const knex = WIKI.models.knex
+  const hasTable = await knex.schema.hasTable('tbdc_companies')
+  if (!hasTable) {
+    return
+  }
+  const hasColumn = await knex.schema.hasColumn('tbdc_companies', 'alihamento')
+  if (!hasColumn) {
+    await knex.schema.alterTable('tbdc_companies', table => {
+      table.text('alihamento')
+    })
+  }
+}
+
 module.exports = {
   Query: {
     async tbdc () { return {} }
@@ -53,10 +67,12 @@ module.exports = {
   TBDCQuery: {
     async companies (obj, args, context) {
       requireAuth(context)
+      await ensureCompaniesAlihamentoColumn()
       return WIKI.models.tbdc.company.query().orderBy('name')
     },
     async company (obj, args, context) {
       requireAuth(context)
+      await ensureCompaniesAlihamentoColumn()
       return WIKI.models.tbdc.company.query().findById(args.id)
     },
     async products (obj, args, context) {
@@ -74,7 +90,9 @@ module.exports = {
     }
   },
   TBDCMutation: {
-    async saveCompany (obj, args) {
+    async saveCompany (obj, args, context) {
+      requireAuth(context)
+      await ensureCompaniesAlihamentoColumn()
       let company
       const companyPayload = _.omit(args, ['id', 'permissions'])
       const companyId = _.toSafeInteger(args.id)
@@ -103,7 +121,8 @@ module.exports = {
 
       return company
     },
-    async deleteCompany (obj, args) {
+    async deleteCompany (obj, args, context) {
+      requireAuth(context)
       await WIKI.models.tbdc.company.query().deleteById(args.id)
       return true
     },

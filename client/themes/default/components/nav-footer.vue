@@ -7,7 +7,7 @@
         template(v-else-if='company && company.length > 0 && contentLicense !== ``')
           span(v-if='contentLicense === `alr`') {{ $t('common:footer.copyright', { company: company, year: currentYear, interpolation: { escapeValue: false } }) }} |&nbsp;
           span(v-else) {{ $t('common:footer.license', { company: company, license: $t('common:license.' + contentLicense), interpolation: { escapeValue: false } }) }} |&nbsp;
-        span Distribuído por #[a(href='https://wiki.js.org', ref='nofollow') Wiki.js] (versão TBDC V2)
+        span Distribuído por #[a(href='https://wiki.js.org', ref='nofollow') Wiki.js] (versão TBDC v2.6-custom)
       v-btn.ml-3(x-small, outlined, :color='statusColor', href='/status')
         v-icon(left, x-small, :color='statusColor') {{ statusIcon }}
         span {{ statusLabel }}

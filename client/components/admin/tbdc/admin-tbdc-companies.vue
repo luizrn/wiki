@@ -34,9 +34,8 @@ v-container(fluid, grid-list-lg)
         v-divider
         //- Results List
         v-data-table(
-          :items='rulesFiltered'
+          :items='rulesFilteredSearched'
           :headers='headers'
-          :search='search'
           :loading='loading'
           :items-per-page='itemsPerPage'
           @page-count='pageCount = $event'
@@ -45,7 +44,8 @@ v-container(fluid, grid-list-lg)
         )
           template(v-slot:item.company='{ item }')
             .d-flex.flex-column
-              strong.blue-grey--text.text--darken-3(:class='$vuetify.theme.dark ? "text--lighten-2" : ""') {{ item.company.name || 'Empresa Independente' }}
+              router-link.company-link.font-weight-bold(:to='`/${item.company.id}/details`')
+                | {{ item.company.name || 'Empresa Independente' }}
               .caption.grey--text CS: {{ item.company.cs ? item.company.cs.name : 'N/A' }}
 
           template(v-slot:item.level='{ item }')
@@ -56,23 +56,34 @@ v-container(fluid, grid-list-lg)
                   span.font-weight-bold {{ getLevelShort(item.level) }}
               span {{ getLevelFull(item.level) }}
 
+          template(v-slot:item.description='{ item }')
+            v-tooltip(top, v-if='item.description')
+              template(v-slot:activator='{ on }')
+                span.tbdc-description-truncated(v-on='on') {{ truncateDescription(item.description) }}
+              span {{ item.description }}
+            span.tbdc-description-truncated(v-else) -
+
           template(v-slot:item.isActive='{ item }')
             v-chip(v-if='item.isActive' x-small color='green' dark) SIM
             v-chip(v-else x-small color='red' dark) NÃO
 
           template(v-slot:item.actions='{ item }')
-            template(v-if='canManage')
-              v-tooltip(top)
-                template(v-slot:activator='{ on }')
-                  v-btn(v-on='on' icon small color='primary' @click='$router.push("/" + item.company.id)')
-                    v-icon(small) mdi-pencil
-                span Editar Cliente
+            v-tooltip(top)
+              template(v-slot:activator='{ on }')
+                v-btn(v-on='on' icon small color='teal' @click='$router.push("/" + item.company.id + "/details")')
+                  v-icon(small) mdi-eye
+              span Ver detalhes
+            v-tooltip(top)
+              template(v-slot:activator='{ on }')
+                v-btn(v-on='on' icon small color='primary' @click='$router.push("/" + item.company.id)')
+                  v-icon(small) mdi-pencil
+              span Editar Cliente
 
-              v-tooltip(top)
-                template(v-slot:activator='{ on }')
-                  v-btn(v-on='on' icon small color='red' @click='deleteCompany(item.company)')
-                    v-icon(small) mdi-delete
-                span Excluir Cliente
+            v-tooltip(top)
+              template(v-slot:activator='{ on }')
+                v-btn(v-on='on' icon small color='red' @click='deleteCompany(item.company)')
+                  v-icon(small) mdi-delete
+              span Excluir Cliente
 
         v-card-chin(v-if='pageCount > 1')
           v-spacer
@@ -114,11 +125,9 @@ export default {
         { text: 'Módulo / Regra', value: 'ruleName' },
         { text: 'Permissão', value: 'level', width: 140 },
         { text: 'Descrição', value: 'description' },
-        { text: 'Em Vigor', value: 'isActive', width: 100 }
+        { text: 'Em Vigor', value: 'isActive', width: 100 },
+        { text: '', value: 'actions', sortable: false, width: 120 }
       ]
-      if (this.canManage) {
-        baseHeaders.push({ text: '', value: 'actions', sortable: false, width: 100 })
-      }
       return baseHeaders
     },
     levelsMap() {
@@ -145,6 +154,29 @@ export default {
       }
 
       return rules
+    },
+    rulesFilteredSearched() {
+      const term = _.toLower(_.trim(this.search || ''))
+      if (!term) {
+        return this.rulesFiltered
+      }
+
+      return this.rulesFiltered.filter(r => {
+        const haystack = [
+          _.get(r, 'company.name', ''),
+          _.get(r, 'company.cs.name', ''),
+          _.get(r, 'company.implantador.name', ''),
+          _.get(r, 'module.product.name', ''),
+          _.get(r, 'module.name', ''),
+          _.get(r, 'ruleName', ''),
+          _.get(r, 'description', ''),
+          _.get(r, 'level', '')
+        ]
+          .map(v => _.toLower(String(v || '')))
+          .join(' ')
+
+        return haystack.includes(term)
+      })
     }
   },
   methods: {
@@ -156,6 +188,13 @@ export default {
     getLevelColor(l) { return _.get(this.levelsMap, [l, 'color'], 'grey') },
     getLevelShort(l) { return (_.get(this.levelsMap, [l, 'label'], l) || l).toUpperCase().slice(0, 20) },
     getLevelFull(l) { return _.get(this.levelsMap, [l, 'description'], _.get(this.levelsMap, [l, 'label'], l)) || l },
+    truncateDescription(text) {
+      const clean = _.trim(_.toString(text || ''))
+      if (clean.length <= 60) {
+        return clean
+      }
+      return `${clean.substring(0, 60)}...`
+    },
     async deleteCompany(company) {
       if (confirm(`Excluir o cliente ${company.name} e todas as suas regras definitivamete?`)) {
         try {
@@ -210,5 +249,20 @@ export default {
   .v-data-table__wrapper {
     overflow-x: auto;
   }
+}
+.tbdc-description-truncated {
+  display: inline-block;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+.company-link {
+  color: #18563B;
+  text-decoration: none;
+}
+.company-link:hover {
+  text-decoration: underline;
 }
 </style>

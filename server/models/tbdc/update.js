@@ -12,6 +12,7 @@ class TBDCUpdate extends Model {
         title: {type: 'string'},
         content: {type: 'string'},
         summary: {type: 'string'},
+        scope: {type: ['string', 'null']},
         authorId: {type: ['integer', 'null']},
         categoryId: {type: 'integer'},
         moduleId: {type: ['integer', 'null']},
@@ -62,6 +63,9 @@ class TBDCUpdate extends Model {
   }
 
   $beforeInsert() {
+    if (!this.scope) {
+      this.scope = 'novidades'
+    }
     this.createdAt = new Date().toISOString()
     this.updatedAt = new Date().toISOString()
     if (this.isPublished && !this.publishedAt) {
@@ -70,6 +74,9 @@ class TBDCUpdate extends Model {
   }
 
   $beforeUpdate() {
+    if (!this.scope) {
+      this.scope = 'novidades'
+    }
     this.updatedAt = new Date().toISOString()
     if (this.isPublished && !this.publishedAt) {
       this.publishedAt = new Date().toISOString()

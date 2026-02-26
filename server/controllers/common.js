@@ -561,7 +561,7 @@ router.get('/:locale/status/*', (req, res) => {
 /**
  * Updates (Novidades)
  */
-router.get('/novidades/data', async (req, res) => {
+async function getTbdcUpdatesPublicData(req, res, scope = 'novidades') {
   try {
     const categories = await WIKI.models.knex('tbdc_update_categories')
       .select('id', 'name', 'color', 'icon', 'showOnPublicPage', 'order')
@@ -584,6 +584,7 @@ router.get('/novidades/data', async (req, res) => {
         'c.showOnPublicPage as category_showOnPublicPage'
       )
       .where('u.isPublished', true)
+      .where('u.scope', _.trim(scope || 'novidades'))
       .where(builder => {
         builder.whereNull('u.categoryId').orWhere('c.showOnPublicPage', true)
       })
@@ -612,6 +613,9 @@ router.get('/novidades/data', async (req, res) => {
     const publicHeaderTitle = _.get(_.find(configRows, { key: 'publicHeaderTitle' }), 'value', 'Novidades TBDC')
     const publicHeaderSubtitle = _.get(_.find(configRows, { key: 'publicHeaderSubtitle' }), 'value', 'Central pública de comunicados e atualizações')
     const publicHeaderLogoUrl = _.get(_.find(configRows, { key: 'publicHeaderLogoUrl' }), 'value', '/_assets/img/tbdc-agro-logo.png')
+    const responsibleUserId = _.toSafeInteger(_.get(_.find(configRows, { key: 'responsibleUserId' }), 'value', 0))
+    const currentUserId = _.toSafeInteger(_.get(req, 'user.id', 0))
+    const canAccessUpdatesAdmin = responsibleUserId > 0 && currentUserId > 0 && currentUserId !== 2 && currentUserId === responsibleUserId
     const publicFooter = {
       instagramText: _.get(_.find(configRows, { key: 'publicFooterInstagramText' }), 'value', 'Siga-nos no Instagram'),
       instagramHandle: _.get(_.find(configRows, { key: 'publicFooterInstagramHandle' }), 'value', '@tbdcagro'),
@@ -647,7 +651,8 @@ router.get('/novidades/data', async (req, res) => {
         subtitle: publicHeaderSubtitle || 'Central pública de comunicados e atualizações',
         logoUrl: publicHeaderLogoUrl || '/_assets/img/tbdc-agro-logo.png'
       },
-      publicFooter
+      publicFooter,
+      canAccessUpdatesAdmin
     })
   } catch (err) {
     res.status(500).json({
@@ -655,10 +660,23 @@ router.get('/novidades/data', async (req, res) => {
       message: err.message || 'Falha ao carregar novidades públicas.'
     })
   }
+}
+
+router.get('/novidades/data', async (req, res) => {
+  return getTbdcUpdatesPublicData(req, res, 'novidades')
+})
+
+router.get('/clientes/data', async (req, res) => {
+  return getTbdcUpdatesPublicData(req, res, 'clientes')
 })
 
 router.get(['/novidades', '/novidades/*'], (req, res, next) => {
   _.set(res.locals, 'pageMeta.title', 'Novidades')
+  res.render('tbdc-updates-public')
+})
+
+router.get(['/clientes', '/clientes/*'], (req, res, next) => {
+  _.set(res.locals, 'pageMeta.title', 'Documentação TBDC')
   res.render('tbdc-updates-public')
 })
 

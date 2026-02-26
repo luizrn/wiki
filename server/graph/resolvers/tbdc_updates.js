@@ -51,11 +51,14 @@ module.exports = {
         .orderBy('publishedAt', 'DESC')
         .orderBy('createdAt', 'DESC')
       const countQuery = WIKI.models.tbdc.update.query()
+      const scope = _.trim(args.scope || 'novidades')
 
       if (args.categoryId) {
         query.where('categoryId', args.categoryId)
         countQuery.where('categoryId', args.categoryId)
       }
+      query.where('scope', scope)
+      countQuery.where('scope', scope)
 
       if (!args.isAdmin) {
         query.where('isPublished', true)
@@ -122,6 +125,7 @@ module.exports = {
           title: args.title,
           content: args.content,
           summary: args.summary,
+          scope: _.trim(args.scope || 'novidades'),
           categoryId: args.categoryId,
           moduleId: args.moduleId,
           targetId: args.targetId,

@@ -10,7 +10,7 @@ v-container(fluid, grid-list-lg)
         v-spacer
         v-btn.animated.fadeInDown(color='primary', @click='isEditorOpen = true; editorMode = "create"; editItem = {}')
           v-icon(left) mdi-plus
-          span Nova Postagem
+          span {{ currentScope === 'clientes' ? 'Novo Documento' : 'Nova Postagem' }}
 
     //- DASHBOARD / STATS
     v-flex(xs12, md4)
@@ -30,6 +30,10 @@ v-container(fluid, grid-list-lg)
 
     v-flex(xs12, md8)
       v-card.animated.fadeInUp.wait-p3s
+        v-tabs(v-model='scopeTab', color='primary', background-color='grey lighten-4')
+          v-tab Novidades
+          v-tab Documentação (/clientes)
+
         v-tabs(v-model='activeTab', color='primary')
           v-tab Postagens
           v-tab Configurações
@@ -213,11 +217,11 @@ v-container(fluid, grid-list-lg)
 
     //- EDITOR DIALOG
     v-dialog(v-model='isEditorOpen', fullscreen, transition='dialog-bottom-transition')
-      v-card
+        v-card
         v-toolbar(dark, color='primary')
           v-btn(icon, dark, @click='isEditorOpen = false')
             v-icon mdi-close
-          v-toolbar-title {{editorMode === "create" ? "Nova Postagem" : "Editar Postagem"}}
+          v-toolbar-title {{editorMode === "create" ? (currentScope === 'clientes' ? 'Novo Documento' : 'Nova Postagem') : (currentScope === 'clientes' ? 'Editar Documento' : 'Editar Postagem')}}
           v-spacer
           v-btn(dark, text, @click='savePost')
             v-icon(left) mdi-content-save
@@ -320,6 +324,7 @@ import gql from 'graphql-tag'
 export default {
   data() {
     return {
+      scopeTab: 0,
       activeTab: 0,
       loading: false,
       updates: [],
@@ -415,6 +420,16 @@ export default {
       ]
     }
   },
+  computed: {
+    currentScope() {
+      return this.scopeTab === 1 ? 'clientes' : 'novidades'
+    }
+  },
+  watch: {
+    scopeTab() {
+      this.refresh()
+    }
+  },
   async mounted() {
     await this.refresh()
   },
@@ -423,9 +438,9 @@ export default {
       this.loading = true
       try {
         const resp = await this.$apollo.query({
-          query: gql`query {
+          query: gql`query($scope: String) {
             tbdcUpdates {
-              listUpdates(limit: 100) { items { id title content summary categoryId category { name color } isPublished publishedAt updatedAt } }
+              listUpdates(limit: 100, scope: $scope) { items { id title content summary scope categoryId category { name color } isPublished publishedAt updatedAt } }
               categories { id name color icon showOnPublicPage order }
               targets { id name icon }
               adminConfig {
@@ -440,6 +455,9 @@ export default {
               list(orderBy: "name") { id name isActive isSystem }
             }
           }`,
+          variables: {
+            scope: this.currentScope
+          },
           fetchPolicy: 'network-only'
         })
         this.updates = resp.data.tbdcUpdates.listUpdates.items
@@ -672,9 +690,9 @@ export default {
     async savePost() {
       try {
         await this.$apollo.mutate({
-          mutation: gql`mutation($id: Int, $title: String!, $content: String!, $summary: String, $categoryId: Int!, $targetId: Int, $isPublished: Boolean) {
+          mutation: gql`mutation($id: Int, $title: String!, $content: String!, $summary: String, $scope: String, $categoryId: Int!, $targetId: Int, $isPublished: Boolean) {
             tbdcUpdates {
-              upsertUpdate(id: $id, title: $title, content: $content, summary: $summary, categoryId: $categoryId, targetId: $targetId, isPublished: $isPublished) {
+              upsertUpdate(id: $id, title: $title, content: $content, summary: $summary, scope: $scope, categoryId: $categoryId, targetId: $targetId, isPublished: $isPublished) {
                 update { id }
               }
             }
@@ -684,6 +702,7 @@ export default {
             title: this.editItem.title,
             content: this.editItem.content,
             summary: this.editItem.summary,
+            scope: this.currentScope,
             categoryId: this.editItem.categoryId,
             targetId: this.editItem.targetId,
             isPublished: this.editItem.isPublished

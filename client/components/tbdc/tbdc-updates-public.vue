@@ -9,6 +9,28 @@
           .brand-copy
             .brand-title {{ headerTitle }}
             .brand-subtitle {{ headerSubtitle }}
+        .header-actions
+          .header-menu
+            v-btn.header-link(
+              text
+              small
+              :href='novidadesHref'
+              :class='{ "is-active": currentSection === "novidades" }'
+            ) Novidades
+            v-btn.header-link(
+              text
+              small
+              :href='clientesHref'
+              :class='{ "is-active": currentSection === "clientes" }'
+            ) Documentação TBDC
+          v-btn.header-admin-btn(
+            v-if='canAccessUpdatesAdmin'
+            small
+            color='red darken-2'
+            dark
+            depressed
+            href='/a/tbdc-updates'
+          ) ADMINISTRAÇÃO
       .updates-links-wrap.hidden-sm-and-down
         .updates-links
           v-chip(
@@ -76,6 +98,13 @@
       //- FEED (DIREITA)
       v-flex(xs12, :md9='!isMobile', :md12='isMobile')
         .updates-feed
+          .timeline-sticky(v-if='!isMobile && filteredUpdates.length')
+            .timeline-time
+              v-icon(x-small, left) mdi-clock-outline
+              | {{ activePostRelativeTime }}
+            .timeline-kind
+              v-icon(x-small, left, color='#34c38f') mdi-plus-circle
+              | PUBLICADO
           .mobile-toolbar(v-if='isMobile')
             v-btn.mobile-menu-btn(color='var(--tbdc-primary)', dark, depressed, rounded, @click='mobileMenu = true')
               v-icon(left, small) mdi-tune-variant
@@ -92,14 +121,20 @@
                 .empty-subtitle Ajuste os filtros ou tente uma nova pesquisa.
 
             template(v-else)
-              v-card.post-card(v-for='post in filteredUpdates', :key='post.id', elevation='1')
+              v-card.post-card(
+                v-for='(post, idx) in filteredUpdates'
+                :key='post.id'
+                elevation='1'
+                :ref='`postCard-${idx}`'
+                ref-in-for
+              )
                 v-card-text.pa-6
                   v-layout(align-center, class='mb-4')
                     v-chip(label, small, :color='post.category ? post.category.color : "#607D8B"', dark) {{post.category ? post.category.name : 'Sem categoria'}}
                     v-spacer
                     .post-date
                       v-icon(x-small, left) mdi-calendar
-                      | {{formatDate(post.publishedAt)}}
+                      | {{formatRelativeDate(post.publishedAt)}}
 
                   .post-title.mb-3 {{post.title}}
 
@@ -244,6 +279,7 @@ export default {
       logoSrc: '/_assets/img/tbdc-agro-logo.png',
       headerTitle: 'Novidades TBDC',
       headerSubtitle: 'Central pública de comunicados e atualizações',
+      canAccessUpdatesAdmin: false,
       publicFooter: {
         instagramText: 'Siga-nos no Instagram',
         instagramHandle: '@tbdcagro',
@@ -262,10 +298,21 @@ export default {
         socialLinkedin: 'https://www.linkedin.com/',
         socialYoutube: 'https://www.youtube.com/'
       },
-      mobileMenu: false
+      mobileMenu: false,
+      activePostIndex: 0,
+      postObserver: null
     }
   },
   computed: {
+    currentSection() {
+      return window.location.pathname.startsWith('/clientes') ? 'clientes' : 'novidades'
+    },
+    novidadesHref() {
+      return '/novidades'
+    },
+    clientesHref() {
+      return '/clientes'
+    },
     isAuthenticated() {
       return _.get(this, '$store.state.user.authenticated', false)
     },
@@ -281,19 +328,37 @@ export default {
     },
     isMobile() {
       return _.get(this, '$vuetify.breakpoint.smAndDown', false)
+    },
+    activePostRelativeTime() {
+      const post = _.get(this.filteredUpdates, `[${this.activePostIndex}]`)
+      return post ? this.formatRelativeDate(post.publishedAt) : ''
+    }
+  },
+  watch: {
+    filteredUpdates() {
+      this.$nextTick(() => this.setupPostObserver())
+    },
+    isMobile() {
+      this.$nextTick(() => this.setupPostObserver())
     }
   },
   async mounted() {
+    moment.locale('pt-br')
     await this.refresh()
     // Marcar como lido ao abrir
     localStorage.setItem('tbdc_updates_last_read', new Date().toISOString())
     this.$root.$emit('tbdc-updates-read')
+    this.$nextTick(() => this.setupPostObserver())
+  },
+  beforeDestroy() {
+    this.teardownPostObserver()
   },
   methods: {
     async refresh() {
       this.loading = true
       try {
-        const resp = await fetch('/novidades/data', {
+        const endpoint = this.currentSection === 'clientes' ? '/clientes/data' : '/novidades/data'
+        const resp = await fetch(endpoint, {
           method: 'GET',
           credentials: 'same-origin'
         })
@@ -307,10 +372,15 @@ export default {
         this.updates = data.updates || []
         this.categories = data.categories || []
         this.sidebarLinks = data.sidebarLinks || []
-        this.headerTitle = _.get(data, 'publicHeader.title', 'Novidades TBDC')
-        this.headerSubtitle = _.get(data, 'publicHeader.subtitle', 'Central pública de comunicados e atualizações')
+        this.headerTitle = this.currentSection === 'clientes'
+          ? 'Documentação TBDC'
+          : _.get(data, 'publicHeader.title', 'Novidades TBDC')
+        this.headerSubtitle = this.currentSection === 'clientes'
+          ? 'Central pública de conteúdos e documentação'
+          : _.get(data, 'publicHeader.subtitle', 'Central pública de comunicados e atualizações')
         this.logoSrc = _.get(data, 'publicHeader.logoUrl', '/_assets/img/tbdc-agro-logo.png')
         this.publicFooter = Object.assign({}, this.publicFooter, _.get(data, 'publicFooter', {}))
+        this.canAccessUpdatesAdmin = !!_.get(data, 'canAccessUpdatesAdmin', false)
       } catch (err) {
         console.error(err)
       }
@@ -319,8 +389,8 @@ export default {
     filterBy(catId) {
       this.selectedCategory = catId
     },
-    formatDate(date) {
-      return moment(date).format('DD [de] MMMM [de] YYYY')
+    formatRelativeDate(date) {
+      return moment(date).fromNow()
     },
     renderMarkdown(content) {
       const safeText = _.escape(content || '')
@@ -352,6 +422,46 @@ export default {
       } catch (err) {
         this.$store.commit('showError', err.message)
       }
+    },
+    teardownPostObserver() {
+      if (this.postObserver) {
+        this.postObserver.disconnect()
+        this.postObserver = null
+      }
+    },
+    setupPostObserver() {
+      this.teardownPostObserver()
+      if (this.isMobile || !this.filteredUpdates.length || typeof IntersectionObserver === 'undefined') {
+        return
+      }
+
+      this.postObserver = new IntersectionObserver((entries) => {
+        let candidate = this.activePostIndex
+        let ratio = 0
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          const idx = Number(entry.target.dataset.postIndex)
+          if (Number.isNaN(idx)) return
+          if (entry.intersectionRatio >= ratio) {
+            ratio = entry.intersectionRatio
+            candidate = idx
+          }
+        })
+        this.activePostIndex = candidate
+      }, {
+        root: null,
+        rootMargin: '-25% 0px -55% 0px',
+        threshold: [0.15, 0.3, 0.5, 0.75, 1]
+      })
+
+      this.filteredUpdates.forEach((_, idx) => {
+        const ref = this.$refs[`postCard-${idx}`]
+        const cmp = Array.isArray(ref) ? ref[0] : ref
+        const el = cmp && cmp.$el ? cmp.$el : null
+        if (!el) return
+        el.dataset.postIndex = String(idx)
+        this.postObserver.observe(el)
+      })
     }
   }
 }
@@ -383,6 +493,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
 }
 
 .brand-wrap {
@@ -415,6 +526,35 @@ export default {
   font-weight: 500;
   opacity: 0.94;
   line-height: 1.35;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-link {
+  color: #fff !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  border-radius: 999px;
+}
+
+.header-link.is-active {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.header-admin-btn {
+  font-weight: 800 !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase !important;
 }
 
 .updates-links-wrap {
@@ -459,6 +599,39 @@ export default {
 
 .updates-content {
   padding: 28px 0 40px;
+}
+
+.updates-feed {
+  position: relative;
+  padding-left: 132px;
+}
+
+.timeline-sticky {
+  position: sticky;
+  top: 106px;
+  margin-left: -120px;
+  width: 106px;
+  z-index: 2;
+}
+
+.timeline-time {
+  color: #6f7d74;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.timeline-kind {
+  color: #4e5f57;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
 }
 
 .mobile-toolbar {
@@ -714,6 +887,26 @@ export default {
     position: static;
     padding-right: 0;
     margin-bottom: 16px;
+  }
+
+  .updates-feed {
+    padding-left: 0;
+  }
+
+  .timeline-sticky {
+    display: none;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .header-menu {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 
   .brand-title {

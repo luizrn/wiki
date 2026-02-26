@@ -94,7 +94,7 @@
               v-list-item-title Links Públicos
             v-list-item(to='/tbdc-updates', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-update
-              v-list-item-title Novidades
+              v-list-item-title Novidades e Documentação Pública
             v-list-item(to='/tbdc-master', color='primary', v-if='hasPermission(`manage:system`)')
               v-list-item-avatar(size='24', tile): v-icon mdi-shield-crown
               v-list-item-title TBDC Master

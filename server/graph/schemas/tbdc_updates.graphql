@@ -17,6 +17,7 @@ extend type Mutation {
 type TBDCUpdateQuery {
   listUpdates(
     categoryId: Int
+    scope: String
     limit: Int
     offset: Int
   ): TBDCUpdateListResponse @auth(requires: ["read:pages"])
@@ -42,6 +43,7 @@ type TBDCUpdateMutation {
     title: String!
     content: String!
     summary: String
+    scope: String
     categoryId: Int!
     moduleId: Int
     targetId: Int
@@ -113,6 +115,7 @@ type TBDCUpdate {
   title: String!
   content: String!
   summary: String
+  scope: String
   authorId: Int
   authorName: String
   categoryId: Int!
